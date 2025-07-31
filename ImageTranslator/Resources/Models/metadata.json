@@ -1,0 +1,9 @@
+{
+    "fedsynthct_lietal_t1w_brain": {
+        "url": "https://example.com/models/RUN_T1w_Brain_ModelTraced.zip",
+        "display_name": "FedSynthCT MRI-T1w [Brain]",
+        "description": "This model was trained using FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation. If you use this model, <b>please cite</b>:</br><cite>C.B. Raggio et al, FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis, Computers in Biology and Medicine, Volume 192, Part A, 2025, 110160, ISSN 0010-4825, https://doi.org/10.1016/j.compbiomed.2025.110160.</cite></br><b>Input</b>: T1-weighted MRI scans.</br><b>Preprocess</b>: N4ITK Bias Field Correction.</br><b>Output</b>: Synthetic CT volumes [256x256x256].",
+        "module_name": "FedSynthBrainLietAlModel"
+    }
+    
+}
