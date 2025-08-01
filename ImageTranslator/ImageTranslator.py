@@ -29,7 +29,7 @@ class ImageTranslator(ScriptedLoadableModule):
         ScriptedLoadableModule.__init__(self, parent)
 
         self.parent.title = _("ImageTranslator")
-        self.parent.categories = [translate("qSlicerAbstractCoreModule", "Quantification")]
+        self.parent.categories = [translate("qSlicerAbstractCoreModule", "I2IHub")]
         self.parent.dependencies = []
         self.parent.contributors = CONTRIBUTORS
         self.parent.helpText = _(HELP_TEXT)
