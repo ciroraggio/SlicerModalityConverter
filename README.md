@@ -1,8 +1,32 @@
 # SlicerI2IHub
+- [SlicerI2IHub](#sliceri2ihub)
+    - [Key Features](#key-features)
+    - [How to Use](#how-to-use)
+  - [🔌 How to Integrate a Custom Model into the ImageTranslator Module](#-how-to-integrate-a-custom-model-into-the-imagetranslator-module)
+    - [✅ Step 1 — Implement a New Model Class](#-step-1--implement-a-new-model-class)
+    - [🧠 Step 2 — Add Your Model Entry to the Metadata File](#-step-2--add-your-model-entry-to-the-metadata-file)
+    - [📦 Step 3 — Name and Upload Your Model File](#-step-3--name-and-upload-your-model-file)
+    - [🧠 Full Example](#-full-example)
+    - [✅ Summary of Requirements](#-summary-of-requirements)
 
-## 🔌 Integrating a Custom Model into the ImageTranslator Module
+I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I2I) translation. The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
 
-To add your own AI model to the **ImageTranslator** module of the `I2IHub` Slicer extension, follow these 3 steps. The integration is designed to be modular and automatic once the proper structure is respected.
+### Key Features
+
+- Support for multiple pre-trained deep learning models</li>
+- GPU acceleration support for faster processing</li>
+- Easy custom models integration for advanced users</li>
+
+### How to Use
+
+- Select an input image</li>
+- Choose a pre-trained model from the dropdown menu</li>
+- Optionally provide a mask to focus the translation on specific regions</li>
+- Click "Apply" to generate the synthetic image</li>
+
+## 🔌 How to Integrate a Custom Model into the ImageTranslator Module
+
+To add your own AI model to the **ImageTranslator** module of the I2IHub Slicer extension, follow these 3 steps. The integration is designed to be modular and automatic once the proper structure is respected.
 
 ### ✅ Step 1 — Implement a New Model Class
 
@@ -37,7 +61,7 @@ class YourModelClass(BaseModel):
 
 You can also optionally implement `preprocess(...)` and helper methods for preprocessing input volumes, applying transforms, etc.
 
-For a full example, see the class `FedSynthBrainLietAlModel` provided in the source tree.
+For a full example, see the class `FedSynthBrainLiModel` provided in the source tree.
 
 ---
 
@@ -83,29 +107,20 @@ Place the model in:
 
 ### 🧠 Full Example
 
-This [class]((../I2IHub/ImageTranslator/ImageTranslatorLib/ModelsImpl/FedSynthBrainLietAlModel.py)) is a complete working example using Torch and ONNX Runtime. It demonstrates custom:
-
-* Loading
-* Preprocessing
-* Inference
-* Integration with the Slicer views
-
-You can use it as a starting template.
-
-Here is a basic example to get you started:
+Here is a basic example to get started:
 
 1. Implement a new model class
 
    a. Go to  `.../I2IHub/ImageTranslator/ImageTranslatorLib/ModelsImpl`
 
-   b. Create your python module: `ExampleModel.py`
+   b. Create a python module: `ExampleModel.py`
 
-   c. Create your new custom model class: 
+   c. Create a new custom model class: 
 
     ```python
     from ImageTranslatorLib.ModelBase import BaseModel, register_model
             
-    @register_model("your_model_unique_key")
+    @register_model("a_model_unique_key")
     class ExampleModel(BaseModel):
         def _loadModelFromPath(self, modelPath):
             # Upload the model from the OS as you prefer
@@ -123,16 +138,20 @@ Here is a basic example to get you started:
             "...": {
                 "..."
             },
-            "your_model_unique_key": {
+            "a_model_unique_key": {
                 "url": "https://example.com/examplemodel.ext",
                 "display_name": "ExampleModel",
                 "description": "ExampleModel description",
                 "module_name": "ExampleModel"
             }
         }
-3. Export your model file (`your_unique_model_key.extension`) and host it at the `url` specified in the JSON. The model filename **must** start with the same key used in the decorator and the metadata (`your_unique_model_key`).
+3. Export the pretrained model file (`a_model_unique_key.extension`) and host it at the `url` specified in the JSON. The model filename **must** start with the same key used in the decorator and the metadata (`a_model_unique_key`).
 
-4. Reload the module and enjoy your model!
+4. Reload the module and enjoy your model! Once your model class is implemented and the metadata updated:
+
+* It will appear automatically in the dropdown menu of the module UI.
+* It will be downloaded and loaded dynamically as needed.
+* Your inference and preprocessing logic will run when selected.
 
 <center>
     <img src="./assets/ExampleModelIntegration.png">
@@ -150,15 +169,5 @@ Here is a basic example to get you started:
 | Metadata file     | Add an entry to `model_metadata.json`                                    |
 | Model file naming | Must start with the same `your_model_key` used in the decorator and JSON |
 | Download support  | Model is auto-downloaded if not present locally                          |
-
----
-
-### 🧩 Everything Else is Automatic
-
-Once your model class is implemented and the metadata updated:
-
-* It will appear automatically in the dropdown menu of the module UI.
-* It will be downloaded and loaded dynamically as needed.
-* Your inference and preprocessing logic will run when selected.
 
 ---

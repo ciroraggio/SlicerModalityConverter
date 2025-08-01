@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import os
 from slicer import vtkMRMLScalarVolumeNode
+from ImageTranslatorLib.UI.utils import PRINT_MODULE_SUFFIX
 
 # Global registry for model classes
 MODEL_REGISTRY = {}
@@ -8,18 +9,19 @@ MODEL_REGISTRY = {}
 def register_model(key):
     """Decorator to register a model class with a specific key in the metadata.json."""
     def decorator(cls):
-        print(f"Registering model '{key}' with class {cls.__name__}")
+        print(f"{PRINT_MODULE_SUFFIX} Registering model '{key}' with class {cls.__name__}")
         MODEL_REGISTRY[key] = cls
         return cls
     return decorator
 
+"""Base class for all models in the ImageTranslator library."""
 class BaseModel(ABC):
     def __init__(self, modelKey: str, device: str = "cpu"):
         self.modelKey = modelKey
         self.model = None
         self.baseModelsDir = os.path.join(os.path.dirname(__file__), '../Resources/Models')
         self.modelsDir = os.path.abspath(self.baseModelsDir)
-        self.device = device
+        self.device = device.lower()
         
     def loadModel(self):
         import json
@@ -52,7 +54,7 @@ class BaseModel(ABC):
             if self.modelKey not in modelMetadata:
                 raise ValueError(f"Model key '{self.modelKey}' not found in metadata file.")
             
-            print(f"Model '{self.modelKey}' not found locally. Downloading...")
+            print(f"{PRINT_MODULE_SUFFIX} Model '{self.modelKey}' not found locally. Downloading...")
             url = modelMetadata[self.modelKey]["url"]
             response = requests.get(url, stream=True)
             response.raise_for_status()

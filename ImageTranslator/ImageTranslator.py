@@ -29,7 +29,7 @@ class ImageTranslator(ScriptedLoadableModule):
         ScriptedLoadableModule.__init__(self, parent)
 
         self.parent.title = _("ImageTranslator")
-        self.parent.categories = [translate("qSlicerAbstractCoreModule", "Radiotherapy")]
+        self.parent.categories = [translate("qSlicerAbstractCoreModule", "Quantification")]
         self.parent.dependencies = []
         self.parent.contributors = CONTRIBUTORS
         self.parent.helpText = _(HELP_TEXT)
@@ -71,6 +71,7 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self._parameterNodeGuiTag = None
         self.selectedModelKey = None
         self.selectedModelModuleName = None
+        self.selectedDeviceKey = None
         self.requiredDeps = ["monai", "onnx", "onnxruntime", "torch"]
         self.dependencidesInstalled = False
 
@@ -83,6 +84,15 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.applyButton.setVisible(allPresent)
         self.ui.sampleDataButton.setVisible(allPresent)
         self.dependencidesInstalled = allPresent
+    
+    def setMainButtonsState(self, state: bool = True):
+        self.ui.applyButton.setEnabled(state)
+        self.ui.sampleDataButton.setEnabled(state)
+                
+    def onHelpButtonClicked(self):
+        from ImageTranslatorLib.UI.HelpDialog import HelpDialog
+        dialog = HelpDialog(slicer.util.mainWindow())
+        dialog.exec_()
 
     def populateModelDropdown(self):
         import json
@@ -108,11 +118,8 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             moduleName = model_info.get("module_name", None)
 
             if not modelKey or not moduleName:
-                slicer.util.errorDisplay(
-                    f"Model key '{modelKey}' or module_name '{moduleName}' is not defined in metadata.json."
-                )
-                raise ValueError(
-                    f"Model key '{modelKey}' or module_name '{moduleName}' is not defined in metadata.json.")
+                slicer.util.errorDisplay(f"Model key '{modelKey}' or module_name '{moduleName}' is not defined in metadata.json.")
+                raise ValueError(f"Model key '{modelKey}' or module_name '{moduleName}' is not defined in metadata.json.")
 
             self.ui.modelSelector.addItem(displayName, {
                                           "key": modelKey, "description": description, "module_name": moduleName
@@ -128,16 +135,26 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             raise ValueError("No models available.")
 
     def populateDeviceDropdown(self):
-        self.ui.deviceList.addItem("CPU")
+        self.ui.deviceList.addItem("cpu [slow]", {"key": "cpu"})
 
         if self.dependencidesInstalled:
-
-            from torch.cuda import is_available as cuda_available
+            from torch.cuda import is_available as cuda_available, device_count, get_device_name
 
             if cuda_available():
-                for i in range(torch.cuda.device_count()):
-                    deviceName = torch.cuda.get_device_name(i)
-                    self.ui.deviceList.addItem(f"GPU {i} - {deviceName}")
+                for i in range(device_count()):
+                    deviceName = get_device_name(i)
+                    self.ui.deviceList.addItem(f"gpu {i} - {deviceName}", {"key": deviceName})
+        
+        self.ui.deviceList.currentIndexChanged.connect(self.onDeviceSelected)
+        self.ui.deviceList.setCurrentIndex(0)
+        # Force trigger selection for the first item
+        self.onDeviceSelected(0)
+    
+    def onDeviceSelected(self, index):
+        """Handle device selection."""
+        selected_data = self.ui.deviceList.itemData(index)
+        if selected_data:
+            self.selectedDeviceKey = selected_data.get("key")
 
     def onModelSelected(self, index):
         """Handle model selection and display its description."""
@@ -150,6 +167,8 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.modelDescriptionLabel.setText(f"<b>Description</b>:<br>{self.selectedModelDescription}")
 
     def onInstallRequirements(self):
+        from ImageTranslatorLib.UI.utils import PRINT_MODULE_SUFFIX
+        
         if not slicer.util.confirmOkCancelDisplay(
             "The dependencies needed for the extension will be installed, the operation may take a few minutes. A Slicer restart will be necessary.",
             "Press OK to install and restart."
@@ -159,14 +178,14 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.installRequirementsButton.setEnabled(False)
         slicer.util.setPythonConsoleVisible(True)
         self.ui.infoLabel.setText("Installing missing dependencies, please wait...")
-        print("Installing missing dependencies, please wait...")
+        print(f"{PRINT_MODULE_SUFFIX} Installing missing dependencies, please wait...")
 
         try:
             for dep in self.requiredDeps:
-                print(f"Installing {dep}...")
+                print(f"{PRINT_MODULE_SUFFIX} Installing {dep}...")
                 slicer.util.pip_install(dep) if dep != "monai" else slicer.util.pip_install("monai[itk]")
                 
-            print("All dependencies installed successfully.")
+            print(f"{PRINT_MODULE_SUFFIX} All dependencies installed successfully.")
             slicer.app.restart()
         except Exception as e:
             slicer.util.errorDisplay(f"Failed to install requirements: {e}")
@@ -178,6 +197,8 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Load widget from .ui file (created by Qt Designer).
         # Additional widgets can be instantiated manually and added to self.layout.
+        from qt import QIcon, QSize
+        
         uiWidget = slicer.util.loadUI(self.resourcePath("UI/ImageTranslator.ui"))
         self.layout.addWidget(uiWidget)
 
@@ -199,14 +220,18 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose)
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
 
-        # Buttons
+        self.ui.helpButton.setText("Help  ")
+        iconPath = os.path.join(os.path.dirname(__file__), 'Resources', 'Icons', 'question.png')
+        self.ui.helpButton.setIcon(QIcon(iconPath))
+        self.ui.helpButton.setIconSize(QSize(16, 16))
+        self.ui.helpButton.connect("clicked(bool)", self.onHelpButtonClicked)
+        
         self.ui.applyButton.connect("clicked(bool)", self.onApplyButton)
         self.ui.sampleDataButton.connect('clicked(bool)', self.onSampleDataButtonClicked)
         self.ui.installRequirementsButton.connect("clicked(bool)", self.onInstallRequirements)
         self.ui.installRequirementsButton.setVisible(False)
 
         self.initializeParameterNode()
-
         self.populateModelDropdown()
         self.populateDeviceDropdown()
 
@@ -280,18 +305,31 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     def onSampleDataButtonClicked(self):
         """Open "Sample Data" module when user clicks "Download sample" button."""
         slicer.util.selectModule('SampleData')
+        
+    def updateInfoLabel(self, text: str) -> None:
+        """Update the info label with the provided text."""
+        self.ui.infoLabel.setVisible(True)
+        self.ui.infoLabel.setText(text)
+        slicer.app.processEvents()
 
     def onApplyButton(self) -> None:
         """Run processing when user clicks "Apply" button."""
         with slicer.util.tryWithErrorDisplay(_("Failed to compute results."), waitCursor=True):
+            self.setMainButtonsState(False)
+            slicer.util.setPythonConsoleVisible(True)
+            slicer.util.resetSliceViews()
+            self.updateInfoLabel("Processing, please wait...")
 
             self.logic.process(inputVolume=self.ui.inputSelector.currentNode(),
                                outputVolume=self.ui.outputSelector.currentNode(),
                                maskVolume=self.ui.maskSelector.currentNode(),
                                showAllFiles=self.ui.showAllFilesCheckBox.isChecked(),
                                selectedModelKey=self.selectedModelKey,
-                               selectedModelModuleName=self.selectedModelModuleName)
-
+                               selectedModelModuleName=self.selectedModelModuleName,
+                               device=self.selectedDeviceKey)
+            
+            self.updateInfoLabel("Processing completed successfully.")
+            self.setMainButtonsState(True)
 
 #
 # ImageTranslatorLogic
@@ -349,10 +387,10 @@ class ImageTranslatorLogic(ScriptedLoadableModuleLogic):
                 selectedModelModuleName: str = None,
                 showAllFiles: bool = True,
                 device: str = "cpu") -> None:  # model key for selection
-
+                
         if not inputVolume or not outputVolume:
             raise ValueError("Input or output volume is invalid")
-
+        
         modelInstance = self.getModelInstance(selectedModelModuleName, selectedModelKey, device=device)
         modelInstance.loadModel()
 

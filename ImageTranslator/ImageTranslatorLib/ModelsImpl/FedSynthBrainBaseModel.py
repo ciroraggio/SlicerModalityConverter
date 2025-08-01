@@ -1,11 +1,12 @@
-import torch
-from ImageTranslatorLib.ModelBase import BaseModel, register_model
+
+from ImageTranslatorLib.ModelBase import BaseModel
 import slicer
 from slicer import vtkMRMLScalarVolumeNode
 import os
+from ImageTranslatorLib.UI.utils import PRINT_MODULE_SUFFIX
 
-@register_model("fedsynthct_lietal_t1w_brain")
-class FedSynthBrainLietAlModel(BaseModel):
+"""Base class for FedSynthCT-Brain models in the ImageTranslator library."""
+class FedSynthBrainBaseModel(BaseModel):
     def __init__(self, modelKey: str, device: str = "cpu"):
         super().__init__(modelKey, device)
         
@@ -19,7 +20,7 @@ class FedSynthBrainLietAlModel(BaseModel):
             
     
         try:
-            print(f"Loading ONNX model with providers: {providers}")
+            print(f"{PRINT_MODULE_SUFFIX} Loading ONNX model with providers: {providers}")
             model = ort.InferenceSession(modelPath, providers=providers)
             return model
         except Exception as e:
@@ -27,7 +28,7 @@ class FedSynthBrainLietAlModel(BaseModel):
     
     def getPreprocessingTransform(self, maxSize, backgroundValue, isMri=False):
         from monai.transforms import EnsureChannelFirst, Compose, CenterSpatialCrop
-        from ImageTranslatorLib.ModelsImpl.FedSynthBrainLietAlModelUtils import CustomResize, PadToCube, MRINormalize
+        from ImageTranslatorLib.ModelsImpl.FedSynthBrainModelsUtils import CustomResize, PadToCube, MRINormalize
         
         steps = [
                 EnsureChannelFirst(channel_dim="no_channel"),
@@ -45,13 +46,15 @@ class FedSynthBrainLietAlModel(BaseModel):
         
     def preprocess(self, inputVolume, inputMask=None, showAllFiles=True):
         """Preprocess the input volume for inference."""
+        from torch import from_numpy
         if not isinstance(inputVolume, slicer.vtkMRMLScalarVolumeNode):
             raise TypeError("Input must be a vtkMRMLScalarVolumeNode")
         
-        print("Preprocessing input volume...")
+        print(f"{PRINT_MODULE_SUFFIX} Preprocessing input volume...")
 
         if not inputMask:
-            print("No mask provided, generating mask from input volume...")
+            print(f"{PRINT_MODULE_SUFFIX} No mask provided, generating mask from input volume...")
+            slicer.app.processEvents()
             
             maskVolume = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScalarVolumeNode", "MaskedInputVolume")
 
@@ -70,8 +73,9 @@ class FedSynthBrainLietAlModel(BaseModel):
             
             maskVolume = inputMask
             
-        print("Applying N4ITK Bias Field Correction...")
-        correctedInputVolume = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScalarVolumeNode", "PreprocessedMRIVolume")
+        print(f"{PRINT_MODULE_SUFFIX} Applying N4ITK Bias Field Correction...")
+        slicer.app.processEvents()
+        correctedInputVolume = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScalarVolumeNode", "PreprocessedInputVolume")
 
         n4Params = {
             "inputImageName": inputVolume.GetID(),
@@ -92,10 +96,10 @@ class FedSynthBrainLietAlModel(BaseModel):
         if maskNp.min() < 0 or maskNp.max() > 1:
             raise ValueError("Input mask must be binary.")
          
-        input_tensor = torch.from_numpy(inputNp).float()  # (1, 1, D, H, W)
-        mask_tensor = torch.from_numpy(maskNp)  # (1, 1, D, H, W)
+        input_tensor = from_numpy(inputNp).float()  # (1, 1, D, H, W)
+        mask_tensor = from_numpy(maskNp)  # (1, 1, D, H, W)
         
-        print("Applying transforms...")
+        print(f"{PRINT_MODULE_SUFFIX} Applying transforms...")
         mriTransform = self.getPreprocessingTransform(256, backgroundValue=0.0, isMri=True)
         maskTransform = self.getPreprocessingTransform(256, backgroundValue=0)
         preprocessedInput = mriTransform(input_tensor)
@@ -103,27 +107,45 @@ class FedSynthBrainLietAlModel(BaseModel):
         
         if showAllFiles:
             slicer.util.updateVolumeFromArray(correctedInputVolume, preprocessedInput.squeeze().cpu().numpy())
+            displayNode = correctedInputVolume.GetDisplayNode()
+            if displayNode:
+                displayNode.SetWindow(1.0)
+                displayNode.SetLevel(0)
+                
             slicer.util.updateVolumeFromArray(maskVolume, preprocessedMask.squeeze().cpu().numpy())
             
             correctedInputVolume.CopyOrientation(inputVolume)
             maskVolume.CopyOrientation(inputVolume)
+        else:
+            displayNode = maskVolume.GetDisplayNode()
+            if displayNode:
+                displayNode.RemoveAllViewIDs()
+                displayNode.SetVisibility(False)
+
+            slicer.mrmlScene.RemoveNode(maskVolume)
             
-        print("Preprocessing completed.")
+        print(f"{PRINT_MODULE_SUFFIX} Preprocessing completed.")
+        slicer.util.resetSliceViews()
+        slicer.app.processEvents()
         
         return {"input": preprocessedInput, "mask": preprocessedMask}
     
     def runInference(self, inputVolume: vtkMRMLScalarVolumeNode, outputVolume: vtkMRMLScalarVolumeNode, inputMask: vtkMRMLScalarVolumeNode = None, showAllFiles: bool = True):
+        from torch import zeros, from_numpy, tensor, median, stack
         preprocessedData = self.preprocess(inputVolume, inputMask, showAllFiles)
 
-        preprocessedInput = preprocessedData["input"].cpu().numpy()  # Convert to NumPy array
+        print(f"{PRINT_MODULE_SUFFIX} Running inference...")
+        slicer.app.processEvents()
+        
+        preprocessedInput = preprocessedData["input"].cpu().numpy()
         preprocessedMask = preprocessedData["mask"].cpu().numpy()
 
         # Prepare containers
         sCT = {
-            view: torch.zeros(preprocessedInput.shape, device=self.device)
+            view: zeros(preprocessedInput.shape, device=self.device)
             for view in ["first_plane", "second_plane", "third_plane"]
         }
-        MRSlice = torch.zeros(
+        mrVol = zeros(
             (1, 1, preprocessedInput.shape[2], preprocessedInput.shape[3]), device=self.device
         )
 
@@ -139,18 +161,18 @@ class FedSynthBrainLietAlModel(BaseModel):
                     inputSlice = preprocessedInput[0, :, :, sliceIndex]
                     maskSlice = preprocessedMask[0, :, :, sliceIndex]
 
-                # Convert NumPy slice to torch and copy into mr_slice
-                MRSlice[0, 0, :, :] = torch.from_numpy(inputSlice).to(self.device).type(MRSlice.dtype)
+                # Convert NumPy slice to torch and copy into mrVol
+                mrVol[0, 0, :, :] = from_numpy(inputSlice).to(self.device).type(mrVol.dtype)
 
                 if 1 in maskSlice:
                     # Prepare input for ONNX Runtime
                     # Add batch and channel dimensions: (1, 1, H, W)
                     ortInputs = {
-                        self.model.get_inputs()[0].name: MRSlice[0, 0].cpu().numpy()[None, None, :, :]
+                        self.model.get_inputs()[0].name: mrVol[0, 0].cpu().numpy()[None, None, :, :]
                     }
                     ortOuts = self.model.run(None, ortInputs)
 
-                    sCT_slice = torch.tensor(ortOuts[0]).to(self.device).type(sCT[view].dtype)
+                    sCT_slice = tensor(ortOuts[0]).to(self.device).type(sCT[view].dtype)
 
                     # Assign slice back to correct axis
                     if view == "first_plane":
@@ -161,23 +183,23 @@ class FedSynthBrainLietAlModel(BaseModel):
                         sCT[view][:, :, :, sliceIndex] = sCT_slice
 
         # Median voting across views
-        votedSCT, _ = torch.median(
-            torch.stack([sCT["first_plane"], sCT["second_plane"], sCT["third_plane"]], dim=0), dim=0
-        )
-        votedSCT[torch.from_numpy(preprocessedMask == 0).to(self.device)] = -1024
+        votedSCT, _ = median(stack([sCT["first_plane"], sCT["second_plane"], sCT["third_plane"]], dim=0), dim=0)
+        votedSCT[from_numpy(preprocessedMask == 0).to(self.device)] = -1024
 
-        # Export to Slicer volume
         slicer.util.updateVolumeFromArray(outputVolume, votedSCT.squeeze().cpu().numpy())
-
-        # Copy geometry and show
         outputVolume.CopyOrientation(inputVolume)
-        slicer.util.setSliceViewerLayers(background=outputVolume, foreground=slicer.util.getNode("PreprocessedMRIVolume"))
+        
+        if showAllFiles:
+            slicer.util.setSliceViewerLayers(background=outputVolume, foreground=slicer.util.getNode("PreprocessedInputVolume"))
+        else:
+            slicer.util.setSliceViewerLayers(background=outputVolume, foreground=None)
+            
         slicer.util.resetSliceViews()
         
-        print("Inference completed. sCT volume is ready.")
+        print(f"{PRINT_MODULE_SUFFIX} Inference completed, sCT volume is ready.")
 
         return votedSCT
-
+        
 
 
 
