@@ -73,7 +73,7 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.selectedModelModuleName = None
         self.selectedDeviceKey = None
         self.requiredDeps = ["monai", "onnx", "onnxruntime", "torch"]
-        self.dependencidesInstalled = False
+        self.dependenciesInstalled = False
 
     def checkDependencies(self):
         from importlib.util import find_spec
@@ -83,8 +83,8 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.infoLabel.setVisible(not allPresent)
         self.ui.applyButton.setVisible(allPresent)
         self.ui.sampleDataButton.setVisible(allPresent)
-        self.dependencidesInstalled = allPresent
-    
+        self.dependenciesInstalled = allPresent 
+
     def setMainButtonsState(self, state: bool = True):
         self.ui.applyButton.setEnabled(state)
         self.ui.sampleDataButton.setEnabled(state)
@@ -135,15 +135,14 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             raise ValueError("No models available.")
 
     def populateDeviceDropdown(self):
+        self.ui.deviceList.clear()
         self.ui.deviceList.addItem("cpu [slow]", {"key": "cpu"})
-
-        if self.dependencidesInstalled:
+        if self.dependenciesInstalled:
             from torch.cuda import is_available as cuda_available, device_count, get_device_name
-
             if cuda_available():
                 for i in range(device_count()):
                     deviceName = get_device_name(i)
-                    self.ui.deviceList.addItem(f"gpu {i} - {deviceName}", {"key": deviceName})
+                    self.ui.deviceList.addItem(f"gpu {i} - {deviceName}", {"key": f"cuda:{i}"})
         
         self.ui.deviceList.currentIndexChanged.connect(self.onDeviceSelected)
         self.ui.deviceList.setCurrentIndex(0)
@@ -184,7 +183,9 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             for dep in self.requiredDeps:
                 print(f"{PRINT_MODULE_SUFFIX} Installing {dep}...")
                 slicer.util.pip_install(dep) if dep != "monai" else slicer.util.pip_install("monai[itk]")
-                
+            
+            slicer.util.pip_install("onnxruntime-gpu")
+            
             print(f"{PRINT_MODULE_SUFFIX} All dependencies installed successfully.")
             slicer.app.restart()
         except Exception as e:
@@ -233,7 +234,6 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         self.initializeParameterNode()
         self.populateModelDropdown()
-        self.populateDeviceDropdown()
 
     def cleanup(self) -> None:
         """Called when the application closes and the module widget is destroyed."""
@@ -244,6 +244,7 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # Make sure parameter node exists and observed
         self.initializeParameterNode()
         self.checkDependencies()
+        self.populateDeviceDropdown()
 
 
     def exit(self) -> None:
