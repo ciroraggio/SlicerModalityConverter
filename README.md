@@ -2,12 +2,13 @@
 - [SlicerI2IHub](#sliceri2ihub)
     - [Key Features](#key-features)
     - [How to Use](#how-to-use)
-  - [🔌 How to Integrate a Custom Model into the ImageTranslator Module](#-how-to-integrate-a-custom-model-into-the-imagetranslator-module)
-    - [✅ Step 1 — Implement a New Model Class](#-step-1--implement-a-new-model-class)
-    - [🧠 Step 2 — Add Your Model Entry to the Metadata File](#-step-2--add-your-model-entry-to-the-metadata-file)
+  - [How to Integrate a Custom Model into the ImageTranslator Module](#how-to-integrate-a-custom-model-into-the-imagetranslator-module)
+    - [🧠 Step 1 — Implement a New Model Class](#-step-1--implement-a-new-model-class)
+    - [🏷️ Step 2 — Add Your Model Entry to the Metadata File](#️-step-2--add-your-model-entry-to-the-metadata-file)
     - [📦 Step 3 — Name and Upload Your Model File](#-step-3--name-and-upload-your-model-file)
-    - [🧠 Full Example](#-full-example)
-    - [✅ Summary of Requirements](#-summary-of-requirements)
+    - [Full Example](#full-example)
+    - [Summary of Requirements](#summary-of-requirements)
+  - [How to Cite](#how-to-cite)
 
 I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I2I) translation. The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT), providing a user-friendly interface.
 
@@ -24,11 +25,11 @@ I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I
 - Optionally provide a mask to focus the translation on specific regions</li>
 - Click "Apply" to generate the synthetic image</li>
 
-## 🔌 How to Integrate a Custom Model into the ImageTranslator Module
+## How to Integrate a Custom Model into the ImageTranslator Module
 
 To add your own AI model to the **ImageTranslator** module of the I2IHub Slicer extension, follow these 3 steps. The integration is designed to be modular and automatic once the proper structure is respected.
 
-### ✅ Step 1 — Implement a New Model Class
+### 🧠 Step 1 — Implement a New Model Class
 
 Create a Python class in the directory:
 
@@ -61,11 +62,11 @@ class YourModelClass(BaseModel):
 
 You can also optionally implement `preprocess(...)` and helper methods for preprocessing input volumes, applying transforms, etc.
 
-For a full example, see the class `FedSynthBrainLiModel` provided in the source tree.
+For a full example, see the classes `FedSynthBrainBaseModel` and `FedSynthBrainLiModel` provided in the source tree.
 
 ---
 
-### 🧠 Step 2 — Add Your Model Entry to the Metadata File
+### 🏷️ Step 2 — Add Your Model Entry to the Metadata File
 
 Open the file:
 
@@ -105,7 +106,7 @@ Place the model in:
 
 ---
 
-### 🧠 Full Example
+### Full Example
 
 Here is a basic example to get started:
 
@@ -159,15 +160,25 @@ Here is a basic example to get started:
 
 ---
 
-### ✅ Summary of Requirements
+### Summary of Requirements
 
-| Requirement       | Description                                                              |
-| ----------------- | ------------------------------------------------------------------------ |
-| Class location    | `ImageTranslatorLib/ModelsImpl/`                                         |
-| Required methods  | `_loadModelFromPath(...)`, `runInference(...)`                           |
-| Decorator         | `@register_model("your_model_key")`                                      |
-| Metadata file     | Add an entry to `model_metadata.json`                                    |
-| Model file naming | Must start with the same `your_model_key` used in the decorator and JSON |
-| Download support  | Model is auto-downloaded if not present locally                          |
+| Requirement       | Description                                                                      |
+| ----------------- | -------------------------------------------------------------------------------- |
+| Class location    | `ImageTranslatorLib/ModelsImpl/`                                                 |
+| Required methods  | `_loadModelFromPath(...)`, `runInference(...)`                                   |
+| Decorator         | `@register_model("your_model_key")`                                              |
+| Metadata file     | Add an entry to `model_metadata.json`                                            |
+| Model file naming | Must start with the same `your_model_key` used in the decorator and JSON         |
+| Download support  | Model file is auto-downloaded from the provided URL if it is not present locally |
 
 ---
+
+## How to Cite
+
+Please cite the relevant publication when using models integrated in this module. Each model's description includes its corresponding citation information.
+
+The I2IHub 3D Slicer module should be cited as follows:
+
+<cite>
+Raggio C.B., Zaffino P., Spadea M.F., Slicer-I2IHub: An Open-Source  Extension for Medical Image-to-Image Translation, 2025, https://github.com/ciroraggio/SlicerI2IHub .
+</cite>

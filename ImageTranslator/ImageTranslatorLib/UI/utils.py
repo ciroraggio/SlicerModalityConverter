@@ -32,7 +32,9 @@ I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I
 Please cite the relevant publication when using models integrated in this module. Each model's description includes its corresponding citation information.
 <br/>
 The I2IHub 3D Slicer module should be cited as follows:<br/>
-...
+<cite>
+Raggio C.B., Zaffino P., Spadea M.F., Slicer-I2IHub: An Open-Source  Extension for Medical Image-to-Image Translation, 2025, https://github.com/ciroraggio/SlicerI2IHub .
+</cite>
 """
 
 PRINT_MODULE_SUFFIX = "ImageTranslator -"

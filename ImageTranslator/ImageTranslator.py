@@ -134,21 +134,21 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         else:
             raise ValueError("No models available.")
 
-    def populateDeviceDropdown(self):
-        self.ui.deviceList.clear()
+    def initDeviceDropdown(self):
         self.ui.deviceList.addItem("cpu [slow]", {"key": "cpu"})
+        self.ui.deviceList.currentIndexChanged.connect(self.onDeviceSelected)
+        self.ui.deviceList.setCurrentIndex(0)
+        # Force trigger selection for the first item
+        self.onDeviceSelected(0)
+    
+    def populateDeviceDropdown(self):
         if self.dependenciesInstalled:
             from torch.cuda import is_available as cuda_available, device_count, get_device_name
             if cuda_available():
                 for i in range(device_count()):
                     deviceName = get_device_name(i)
                     self.ui.deviceList.addItem(f"gpu {i} - {deviceName}", {"key": f"cuda:{i}"})
-        
-        self.ui.deviceList.currentIndexChanged.connect(self.onDeviceSelected)
-        self.ui.deviceList.setCurrentIndex(0)
-        # Force trigger selection for the first item
-        self.onDeviceSelected(0)
-    
+
     def onDeviceSelected(self, index):
         """Handle device selection."""
         selected_data = self.ui.deviceList.itemData(index)
@@ -198,7 +198,7 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Load widget from .ui file (created by Qt Designer).
         # Additional widgets can be instantiated manually and added to self.layout.
-        from qt import QIcon, QSize
+        from qt import QIcon, QSize, QTimer
         
         uiWidget = slicer.util.loadUI(self.resourcePath("UI/ImageTranslator.ui"))
         self.layout.addWidget(uiWidget)
@@ -233,8 +233,15 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.installRequirementsButton.setVisible(False)
 
         self.initializeParameterNode()
-        self.populateModelDropdown()
-
+        
+        self.checkDependencies()
+        
+        self.initDeviceDropdown()
+        
+        # importing torch functions to check gpu availability block and delay the UI initialization. 
+        # This timer ensures the dropdown is populated with gpu options right after the UI is loaded.
+        QTimer.singleShot(0, self.populateDeviceDropdown) 
+        
     def cleanup(self) -> None:
         """Called when the application closes and the module widget is destroyed."""
         self.removeObservers()
@@ -243,8 +250,8 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """Called each time the user opens this module."""
         # Make sure parameter node exists and observed
         self.initializeParameterNode()
-        self.checkDependencies()
-        self.populateDeviceDropdown()
+        self.populateModelDropdown()
+        
 
 
     def exit(self) -> None:
@@ -331,7 +338,6 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             
             self.updateInfoLabel("Processing completed successfully.")
             self.setMainButtonsState(True)
-
 #
 # ImageTranslatorLogic
 #
