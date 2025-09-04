@@ -236,6 +236,8 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         
         self.checkDependencies()
         
+        self.populateModelDropdown()
+        
         self.initDeviceDropdown()
         
         # importing torch functions to check gpu availability block and delay the UI initialization. 
@@ -250,7 +252,6 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """Called each time the user opens this module."""
         # Make sure parameter node exists and observed
         self.initializeParameterNode()
-        self.populateModelDropdown()
         
 
 
