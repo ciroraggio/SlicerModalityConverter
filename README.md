@@ -8,6 +8,7 @@
     - [📦 Step 3 — Name and Upload Your Model File](#-step-3--name-and-upload-your-model-file)
     - [Full Example](#full-example)
     - [Summary of Requirements](#summary-of-requirements)
+  - [How to Contribute](#how-to-contribute)
   - [How to Cite](#how-to-cite)
 
 I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I2I) translation. The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT), providing a user-friendly interface.
@@ -172,6 +173,13 @@ Here is a basic example to get started:
 | Download support  | Model file is auto-downloaded from the provided URL if it is not present locally |
 
 ---
+
+## How to Contribute
+Integrating new models for different modalities is encouraged! 
+
+Once you have integrated and tested your custom model locally, simply create a pull request in the [original repository](https://github.com/ciroraggio/SlicerI2IHub/) to request integration of your model into the 3D Slicer extension.
+
+If you require any further information or have any queries, please send an email to: <email>ciro.raggio@kit.edu</email>.
 
 ## How to Cite
 

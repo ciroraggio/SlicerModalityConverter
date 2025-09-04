@@ -221,8 +221,8 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose)
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
 
-        self.ui.helpButton.setText("Help  ")
-        iconPath = os.path.join(os.path.dirname(__file__), 'Resources', 'Icons', 'question.png')
+        self.ui.helpButton.setText("Guide  ")
+        iconPath = os.path.join(os.path.dirname(__file__), 'Resources', 'Icons', 'book.png')
         self.ui.helpButton.setIcon(QIcon(iconPath))
         self.ui.helpButton.setIconSize(QSize(16, 16))
         self.ui.helpButton.connect("clicked(bool)", self.onHelpButtonClicked)

@@ -4,7 +4,7 @@ class HelpDialog(qt.QDialog):
     def __init__(self, parent=None):
         super(HelpDialog, self).__init__(parent)
         from ImageTranslatorLib.UI.utils import HELP_TEXT, CONTRIBUTORS
-        self.setWindowTitle("I2IHub - Help and Acknowledgements")
+        self.setWindowTitle("I2IHub - Help Guide and Acknowledgements")
         self.setMinimumWidth(600)
         self.setMinimumHeight(700)
 
@@ -22,7 +22,7 @@ class HelpDialog(qt.QDialog):
         helpTextEdit.setReadOnly(True)
         helpTextEdit.setHtml(HELP_TEXT)
         helpLayout.addWidget(helpTextEdit)
-        tabWidget.addTab(helpTab, "Help")
+        tabWidget.addTab(helpTab, "Help Guide")
 
         # Acknowledgements tab
         ackTab = qt.QWidget()
