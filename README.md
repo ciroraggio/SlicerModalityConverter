@@ -1,6 +1,6 @@
-# SlicerI2IHub
+# SlicerImageToImageHub
 
-- [SlicerI2IHub](#sliceri2ihub)
+- [SlicerImageToImageHub](#slicerimagetoimagehub)
   - [Installation](#installation)
   - [ImageTranslator](#imagetranslator)
     - [Key Features](#key-features)
@@ -11,7 +11,7 @@
   - [How to Contribute](#how-to-contribute)
   - [How to Cite](#how-to-cite)
 
-I2IHub is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation. 
+ImageToImageHub is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation.
 
 The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
 
@@ -48,12 +48,12 @@ This extension is intended for research purposes only. If a model is applied to 
 
 At this point, the interface should look like this:  
 <center>
-<img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ScreenshotUI.png" />
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerImageToImageHub/main/ImageTranslator/assets/ScreenshotUI.png" />
 </center>
 
 8. Click **Run** to start the inference. The resulting volume will appear once the process is complete:  
 <center>
-<img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ScreenshotResultExample.png" />
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerImageToImageHub/main/ImageTranslator/assets/ScreenshotResultExample.png" />
 </center>
 
 **Full example**
@@ -63,14 +63,14 @@ https://github.com/user-attachments/assets/64b5d354-1ddc-48b5-abd5-15bf0475b68c
 
 ### How to Integrate a Custom Model
 
-To add your own model to the **ImageTranslator** module of the I2IHub Slicer extension, follow these 3 steps. The integration is designed to be modular and automatic once the proper structure is respected.
+To add your own model to the **ImageTranslator** module of the ImageToImageHub Slicer extension, follow these 3 steps. The integration is designed to be modular and automatic once the proper structure is respected.
 
 🧠 **Step 1 — Implement a New Model Class**
 
 Create a Python class in the directory:
 
 ```
-.../I2IHub/ImageTranslator/ImageTranslatorLib/ModelsImpl/
+.../ImageToImageHub/ImageTranslator/ImageTranslatorLib/ModelsImpl/
 ```
 
 Your class must inherit from the `BaseModel` abstract class and implement the required methods. Here is the base structure:
@@ -107,7 +107,7 @@ For a full example, see the classes `FedSynthBrainBaseModel` and `FedSynthBrainL
 Open the file:
 
 ```
-.../I2IHub/ImageTranslator/Resources/Models/model_metadata.json
+.../ImageToImageHub/ImageTranslator/Resources/Models/model_metadata.json
 ```
 
 Add a new entry in the following format:
@@ -139,7 +139,7 @@ Save your model file (e.g. `your_unique_model_key.onnx`) and host it at the `url
 Place the model in:
 
 ```
-.../I2IHub/ImageTranslator/Resources/Models/
+.../ImageToImageHub/ImageTranslator/Resources/Models/
 ```
 
 > If the model is not already present locally, the system will **automatically download** it from the provided URL when selected in the GUI.
@@ -152,7 +152,7 @@ Here is a basic example to get started:
 
 1. Implement a new model class
 
-   a. Go to  `.../I2IHub/ImageTranslator/ImageTranslatorLib/ModelsImpl`
+   a. Go to  `.../ImageToImageHub/ImageTranslator/ImageTranslatorLib/ModelsImpl`
 
    b. Create a python module: `ExampleModel.py`
 
@@ -173,7 +173,7 @@ Here is a basic example to get started:
             ...
     ```
 
-2. Update Metadata File at `.../I2IHub/ImageTranslator/Resources/Models/metadata.json`
+2. Update Metadata File at `.../ImageToImageHub/ImageTranslator/Resources/Models/metadata.json`
 
     ```json
         {
@@ -196,7 +196,7 @@ Here is a basic example to get started:
 - Your inference and preprocessing logic will run when selected.
 
 <center>
-    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ExampleModelIntegration.png" />
+    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerImageToImageHub/main/ImageTranslator/assets/ExampleModelIntegration.png" />
 </center>
 
 ---
@@ -218,7 +218,7 @@ Here is a basic example to get started:
 
 Integrating new models for different modalities is encouraged!
 
-Once you have integrated and tested your custom model locally, simply create a pull request in the [original repository](https://github.com/ciroraggio/SlicerI2IHub/) to request integration of your model into the 3D Slicer extension.
+Once you have integrated and tested your custom model locally, simply create a pull request in the [original repository](https://github.com/ciroraggio/SlicerImageToImageHub/) to request integration of your model into the 3D Slicer extension.
 
 If you require any further information or have any queries, please send an email to: <email>ciro.raggio@kit.edu</email>.
 
@@ -226,8 +226,8 @@ If you require any further information or have any queries, please send an email
 
 Please cite the relevant publication when using models integrated in this module. Each model's description includes its corresponding citation information.
 
-The I2IHub 3D Slicer module should be cited as follows:
+The ImageToImageHub 3D Slicer module should be cited as follows:
 
 <cite>
-Raggio C.B., Zaffino P., Spadea M.F., Slicer-I2IHub: An Open-Source  Extension for Medical Image-to-Image Translation, 2025, https://github.com/ciroraggio/SlicerI2IHub .
+Raggio C.B., Zaffino P., Spadea M.F., Slicer-ImageToImageHub: An Open-Source  Extension for Medical Image-to-Image Translation, 2025, https://github.com/ciroraggio/SlicerImageToImageHub .
 </cite>
