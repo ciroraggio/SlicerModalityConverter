@@ -1,8 +1,11 @@
-CONTRIBUTORS = ["Ciro Benito Raggio (Karlsruhe Institute of Technology, Germany)", "Paolo Zaffino (Magna Graecia University of Catanzaro, Italy)", "Maria Francesca Spadea (Karlsruhe Institute of Technology, Germany)"]
+import os
 
-HELP_TEXT = """
+CONTRIBUTORS = ["Ciro Benito Raggio (Karlsruhe Institute of Technology, Germany)", "Paolo Zaffino (Magna Graecia University of Catanzaro, Italy)", "Maria Francesca Spadea (Karlsruhe Institute of Technology, Germany)"]
+MODULE_ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+LOGO_PATH = os.path.join(MODULE_ROOT_DIR, 'ImageToImageHub.png')
+HELP_TEXT = f"""
 <center>
-    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerImageToImageHub/main/ImageToImageHub.png" width=320 height=180>
+    <img src="file://{LOGO_PATH}" width=320 height=180>
 </center>
 <br/>
 <b>Description</b>
