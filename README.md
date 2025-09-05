@@ -11,7 +11,9 @@
   - [How to Contribute](#how-to-contribute)
   - [How to Cite](#how-to-cite)
 
-I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I2I) translation. The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
+I2IHub is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation. 
+
+The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
 
 ## Installation
 
