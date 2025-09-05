@@ -2,12 +2,12 @@ CONTRIBUTORS = ["Ciro Benito Raggio (Karlsruhe Institute of Technology, Germany)
 
 HELP_TEXT = """
 <center>
-    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/I2IHub.png" width=320 height=180>
+    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerImageToImageHub/main/ImageToImageHub.png" width=320 height=180>
 </center>
 <br/>
 <b>Description</b>
 <br/>
-I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I2I) translation. The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
+ImageToImageHub is an open-source 3D Slicer module designed for medical image-to-image (I2I) translation. The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
 <br/>
 <br/>
 <b>Key Features</b>
@@ -27,17 +27,17 @@ I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I
 <br/>
 <b>More info</b>
 <ul>
-    <li>View the source code on GitHub: <a href="https://github.com/ciroraggio/SlicerI2IHub">https://github.com/ciroraggio/SlicerI2IHub</a></li>
-    <li><a href="https://github.com/ciroraggio/SlicerI2IHub/blob/main/README.md#-how-to-integrate-a-custom-model-into-the-imagetranslator-module">How to integrate your models in I2IHub</a></li>
+    <li>View the source code on GitHub: <a href="https://github.com/ciroraggio/SlicerImageToImageHub">https://github.com/ciroraggio/SlicerImageToImageHub</a></li>
+    <li><a href="https://github.com/ciroraggio/SlicerImageToImageHub/blob/main/README.md#-how-to-integrate-a-custom-model-into-the-imagetranslator-module">How to integrate your models in ImageToImageHub</a></li>
 </ul>
 <br/>
 <b>How to cite</b>
 <br/> 
 Please cite the relevant publication when using models integrated in this module. Each model's description includes its corresponding citation information.
 <br/>
-The I2IHub 3D Slicer module should be cited as follows:<br/>
+The ImageToImageHub 3D Slicer module should be cited as follows:<br/>
 <cite>
-Raggio C.B., Zaffino P., Spadea M.F., Slicer-I2IHub: An Open-Source  Extension for Medical Image-to-Image Translation, 2025, https://github.com/ciroraggio/SlicerI2IHub .
+Raggio C.B., Zaffino P., Spadea M.F., Slicer-ImageToImageHub: An Open-Source  Extension for Medical Image-to-Image Translation, 2025, https://github.com/ciroraggio/SlicerImageToImageHub .
 </cite>
 """
 

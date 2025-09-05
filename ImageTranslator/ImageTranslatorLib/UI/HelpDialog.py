@@ -4,7 +4,7 @@ class HelpDialog(qt.QDialog):
     def __init__(self, parent=None):
         super(HelpDialog, self).__init__(parent)
         from ImageTranslatorLib.UI.utils import HELP_TEXT, CONTRIBUTORS
-        self.setWindowTitle("I2IHub - Help Guide and Acknowledgements")
+        self.setWindowTitle("ImageToImageHub - Help Guide and Acknowledgements")
         self.setMinimumWidth(600)
         self.setMinimumHeight(800)
 
