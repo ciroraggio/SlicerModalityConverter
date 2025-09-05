@@ -56,11 +56,8 @@ At this point, the interface should look like this:
 
 **Full example**
 
-<center>
-<video controls>
-  <source src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ImageTranslatorVideoExample.mp4" type="video/mp4">
-</video>
-</center>
+https://github.com/user-attachments/assets/64b5d354-1ddc-48b5-abd5-15bf0475b68c
+
 
 ### How to Integrate a Custom Model
 
