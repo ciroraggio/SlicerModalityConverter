@@ -1,6 +1,10 @@
 CONTRIBUTORS = ["Ciro Benito Raggio (Karlsruhe Institute of Technology, Germany)", "Paolo Zaffino (Magna Graecia University of Catanzaro, Italy)", "Maria Francesca Spadea (Karlsruhe Institute of Technology, Germany)"]
 
 HELP_TEXT = """
+<center>
+    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/I2IHub.png" width=320 height=180>
+</center>
+<br/>
 <b>Description</b>
 <br/>
 I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I2I) translation. The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
@@ -13,12 +17,12 @@ I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I
     <li>Easy custom models integration for advanced users</li>
 </ul>
 <br/>
-<b>Usage</b>
+<b>How to Use</b>
 <ul>
     <li>Select an input image</li>
-    <li>Choose a pre-trained model from the dropdown menu</li>
-    <li>Optionally provide a mask to focus the translation on specific regions</li>
-    <li>Click "Apply" to generate the synthetic image</li>
+    <li>Choose a pre-trained model from the dropdown menu. Selecting each model will display detailed information on the translation modality, specific processing and inference output</li>
+    <li>Optionally provide a binary mask to focus the translation on specific regions</li>
+    <li>Click "Run" to generate the synthetic image</li>
 </ul>
 <br/>
 <b>More info</b>

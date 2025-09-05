@@ -6,7 +6,7 @@ class HelpDialog(qt.QDialog):
         from ImageTranslatorLib.UI.utils import HELP_TEXT, CONTRIBUTORS
         self.setWindowTitle("I2IHub - Help Guide and Acknowledgements")
         self.setMinimumWidth(600)
-        self.setMinimumHeight(700)
+        self.setMinimumHeight(800)
 
         mainLayout = qt.QVBoxLayout(self)
 

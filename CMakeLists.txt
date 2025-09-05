@@ -4,12 +4,12 @@ project(I2IHub)
 
 #-----------------------------------------------------------------------------
 # Extension meta-information
-set(EXTENSION_HOMEPAGE "https://www.slicer.org/wiki/Documentation/Nightly/Extensions/I2IHub")
-set(EXTENSION_CATEGORY "Examples")
-set(EXTENSION_CONTRIBUTORS "John Doe (AnyWare Corp.)")
-set(EXTENSION_DESCRIPTION "This is an example of a simple extension")
-set(EXTENSION_ICONURL "https://www.example.com/Slicer/Extensions/I2IHub.png")
-set(EXTENSION_SCREENSHOTURLS "https://www.example.com/Slicer/Extensions/I2IHub/Screenshots/1.png")
+set(EXTENSION_HOMEPAGE "https://github.com/ciroraggio/SlicerI2IHub")
+set(EXTENSION_CATEGORY "I2IHub")
+set(EXTENSION_CONTRIBUTORS "Ciro Benito Raggio (Karlsruhe Institute of Technology, Germany), Paolo Zaffino (Magna Graecia University of Catanzaro, Italy), Maria Francesca Spadea (Karlsruhe Institute of Technology, Germany)")
+set(EXTENSION_DESCRIPTION "I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I2I) translation. The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation, providing a user-friendly interface. Custom models can be easily integrated.")
+set(EXTENSION_ICONURL "https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/I2IHub.png")
+set(EXTENSION_SCREENSHOTURLS "https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ScreenshotResultExample.png")
 set(EXTENSION_DEPENDS "NA") # Specified as a list or "NA" if no dependencies
 
 #-----------------------------------------------------------------------------
@@ -20,7 +20,6 @@ include(${Slicer_USE_FILE})
 #-----------------------------------------------------------------------------
 # Extension modules
 add_subdirectory(I2IHub)
-add_subdirectory(ImageTranslator)
 add_subdirectory(ImageTranslator)
 ## NEXT_MODULE
 
