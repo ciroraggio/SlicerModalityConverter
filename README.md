@@ -5,8 +5,8 @@
   - [ImageTranslator](#imagetranslator)
     - [Key Features](#key-features)
     - [How to Use](#how-to-use)
+    - [Example (with video)](#example-with-video)
     - [How to Integrate a Custom Model](#how-to-integrate-a-custom-model)
-    - [Full Example](#full-example)
     - [Summary of Requirements](#summary-of-requirements)
   - [How to Contribute](#how-to-contribute)
   - [How to Cite](#how-to-cite)
@@ -34,12 +34,32 @@ I2IHub is an open-source 3D Slicer module designed for medical image-to-image (I
 
 This extension is intended for research purposes only. If a model is applied to an input image of the wrong type (i.e. using a CT or CBCT instead of an MRI for an MRI-to-sCT model), the output will be wrong or unpredictable.
 
+### Example (with video)
+
+1. Click **Download sample** to open the *Sample Data* module.  
+2. Download the **MRHead** volume.  
+3. In the *ImageTranslator* module, select the MRHead volume as **Input volume**.  
+4. From the **Model** list, choose the desired model (e.g., `[Brain] FedSynthCT MRI-T1w Li Model`).  
+5. (Optional) Check **Preview volumes** if you want to visualize intermediate volumes generated during processing.  
+6. Choose the **Output volume**.  
+7. In the **Advanced** section, select the device from the **Device** list. A GPU device provides faster inference.  
+
+At this point, the interface should look like this:  
 <center>
-    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ScreenshotUI.png">
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ScreenshotUI.png" />
 </center>
 
+8. Click **Run** to start the inference. The resulting volume will appear once the process is complete:  
 <center>
-    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ScreenshotResultExample.png">
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ScreenshotResultExample.png" />
+</center>
+
+**Full example**
+
+<center>
+<video controls>
+  <source src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ImageTranslatorVideoExample.mp4" type="video/mp4">
+</video>
 </center>
 
 ### How to Integrate a Custom Model
@@ -127,7 +147,7 @@ Place the model in:
 
 ---
 
-### Full Example
+**Full Example**
 
 Here is a basic example to get started:
 
@@ -177,7 +197,7 @@ Here is a basic example to get started:
 - Your inference and preprocessing logic will run when selected.
 
 <center>
-    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ExampleModelIntegration.png">
+    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerI2IHub/main/ImageTranslator/assets/ExampleModelIntegration.png" />
 </center>
 
 ---
