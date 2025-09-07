@@ -58,7 +58,9 @@ At this point, the interface should look like this:
 
 **Full example**
 
-https://github.com/user-attachments/assets/64b5d354-1ddc-48b5-abd5-15bf0475b68c
+
+https://github.com/user-attachments/assets/c4a71794-36d1-40d6-91c9-47f56983d56c
+
 
 
 ### How to Integrate a Custom Model
