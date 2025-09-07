@@ -1,8 +1,8 @@
-# SlicerImageToImageHub
+# SlicerModalityConverter
 
-- [SlicerImageToImageHub](#slicerimagetoimagehub)
+- [SlicerModalityConverter](#slicermodalityconverter)
   - [Installation](#installation)
-  - [ImageTranslator](#imagetranslator)
+  - [ModalityConverter](#modalityconverter)
     - [Key Features](#key-features)
     - [How to Use](#how-to-use)
     - [Example (with video)](#example-with-video)
@@ -11,15 +11,15 @@
   - [How to Contribute](#how-to-contribute)
   - [How to Cite](#how-to-cite)
 
-ImageToImageHub is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation.
+SlicerModalityConverter is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation.
 
-The ImageTranslator module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
+The ModalityConverter module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
 
 ## Installation
 
 ⚠️ This extension is not yet included in the official 3D Slicer Extensions Index, but we hope it will be soon. In the meantime, you can download the source code and install the extension in 3D Slicer by following the steps in this simple [video tutorial](https://youtu.be/QsxzjQb05D4?feature=shared).
 
-## ImageTranslator
+## ModalityConverter
 
 ### Key Features
 
@@ -40,7 +40,7 @@ This extension is intended for research purposes only. If a model is applied to 
 
 1. Click **Download sample** to open the *Sample Data* module.  
 2. Download the **MRHead** volume.  
-3. In the *ImageTranslator* module, select the MRHead volume as **Input volume**.  
+3. In the *ModalityConverter* module, select the MRHead volume as **Input volume**.  
 4. From the **Model** list, choose the desired model (e.g., `[Brain] FedSynthCT MRI-T1w Li Model`).  
 5. (Optional) Check **Preview volumes** if you want to visualize intermediate volumes generated during processing.  
 6. Choose the **Output volume**.  
@@ -48,35 +48,37 @@ This extension is intended for research purposes only. If a model is applied to 
 
 At this point, the interface should look like this:  
 <center>
-<img src="https://raw.githubusercontent.com/ciroraggio/SlicerImageToImageHub/main/ImageTranslator/assets/ScreenshotUI.png" />
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerModalityConverter/main/ModalityConverter/assets/ScreenshotUI.png" />
 </center>
 
 8. Click **Run** to start the inference. The resulting volume will appear once the process is complete:  
 <center>
-<img src="https://raw.githubusercontent.com/ciroraggio/SlicerImageToImageHub/main/ImageTranslator/assets/ScreenshotResultExample.png" />
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerModalityConverter/main/ModalityConverter/assets/ScreenshotResultExample.png" />
 </center>
 
 **Full example**
 
-https://github.com/user-attachments/assets/64b5d354-1ddc-48b5-abd5-15bf0475b68c
+
+https://github.com/user-attachments/assets/c4a71794-36d1-40d6-91c9-47f56983d56c
+
 
 
 ### How to Integrate a Custom Model
 
-To add your own model to the **ImageTranslator** module of the ImageToImageHub Slicer extension, follow these 3 steps. The integration is designed to be modular and automatic once the proper structure is respected.
+To add your own model to the **ModalityConverter** module of the ModalityConverter Slicer extension, follow these 3 steps. The integration is designed to be modular and automatic once the proper structure is respected.
 
 🧠 **Step 1 — Implement a New Model Class**
 
 Create a Python class in the directory:
 
 ```
-.../ImageToImageHub/ImageTranslator/ImageTranslatorLib/ModelsImpl/
+.../ModalityConverter/ModalityConverter/ModalityConverterLib/ModelsImpl/
 ```
 
 Your class must inherit from the `BaseModel` abstract class and implement the required methods. Here is the base structure:
 
 ```python
-from ImageTranslatorLib.ModelBase import BaseModel, register_model
+from ModalityConverterLib.ModelBase import BaseModel, register_model
 
 @register_model("your_unique_model_key")
 class YourModelClass(BaseModel):
@@ -107,7 +109,7 @@ For a full example, see the classes `FedSynthBrainBaseModel` and `FedSynthBrainL
 Open the file:
 
 ```
-.../ImageToImageHub/ImageTranslator/Resources/Models/model_metadata.json
+.../ModalityConverter/ModalityConverter/Resources/Models/model_metadata.json
 ```
 
 Add a new entry in the following format:
@@ -139,7 +141,7 @@ Save your model file (e.g. `your_unique_model_key.onnx`) and host it at the `url
 Place the model in:
 
 ```
-.../ImageToImageHub/ImageTranslator/Resources/Models/
+.../ModalityConverter/ModalityConverter/Resources/Models/
 ```
 
 > If the model is not already present locally, the system will **automatically download** it from the provided URL when selected in the GUI.
@@ -152,14 +154,14 @@ Here is a basic example to get started:
 
 1. Implement a new model class
 
-   a. Go to  `.../ImageToImageHub/ImageTranslator/ImageTranslatorLib/ModelsImpl`
+   a. Go to  `.../ModalityConverter/ModalityConverter/ModalityConverterLib/ModelsImpl`
 
    b. Create a python module: `ExampleModel.py`
 
    c. Create a new custom model class:
 
     ```python
-    from ImageTranslatorLib.ModelBase import BaseModel, register_model
+    from ModalityConverterLib.ModelBase import BaseModel, register_model
             
     @register_model("a_model_unique_key")
     class ExampleModel(BaseModel):
@@ -173,7 +175,7 @@ Here is a basic example to get started:
             ...
     ```
 
-2. Update Metadata File at `.../ImageToImageHub/ImageTranslator/Resources/Models/metadata.json`
+2. Update Metadata File at `.../ModalityConverter/ModalityConverter/Resources/Models/metadata.json`
 
     ```json
         {
@@ -196,7 +198,7 @@ Here is a basic example to get started:
 - Your inference and preprocessing logic will run when selected.
 
 <center>
-    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerImageToImageHub/main/ImageTranslator/assets/ExampleModelIntegration.png" />
+    <img src="https://raw.githubusercontent.com/ciroraggio/SlicerModalityConverter/main/ModalityConverter/assets/ExampleModelIntegration.png" />
 </center>
 
 ---
@@ -205,7 +207,7 @@ Here is a basic example to get started:
 
 | Requirement         | Description                                                                      |
 | ------------------- | -------------------------------------------------------------------------------- |
-| Class location      | `ImageTranslatorLib/ModelsImpl/`                                                 |
+| Class location      | `ModalityConverterLib/ModelsImpl/`                                                 |
 | Required methods    | `_loadModelFromPath(...)`, `runInference(...)`                                   |
 | Model key decorator | `@register_model("your_model_key")`                                              |
 | Metadata file       | Add an entry to `model_metadata.json`                                            |
@@ -218,7 +220,7 @@ Here is a basic example to get started:
 
 Integrating new models for different modalities is encouraged!
 
-Once you have integrated and tested your custom model locally, simply create a pull request in the [original repository](https://github.com/ciroraggio/SlicerImageToImageHub/) to request integration of your model into the 3D Slicer extension.
+Once you have integrated and tested your custom model locally, simply create a pull request in the [original repository](https://github.com/ciroraggio/SlicerModalityConverter/) to request integration of your model into the 3D Slicer extension.
 
 If you require any further information or have any queries, please send an email to: <email>ciro.raggio@kit.edu</email>.
 
@@ -226,8 +228,8 @@ If you require any further information or have any queries, please send an email
 
 Please cite the relevant publication when using models integrated in this module. Each model's description includes its corresponding citation information.
 
-The ImageToImageHub 3D Slicer module should be cited as follows:
+The ModalityConverter 3D Slicer module should be cited as follows:
 
 <cite>
-Raggio C.B., Zaffino P., Spadea M.F., Slicer-ImageToImageHub: An Open-Source  Extension for Medical Image-to-Image Translation, 2025, https://github.com/ciroraggio/SlicerImageToImageHub .
+Raggio C.B., Zaffino P., Spadea M.F., SlicerModalityConverter: An Open-Source 3D Slicer Extension for Medical Image-to-Image Translation, 2025, https://github.com/ciroraggio/SlicerModalityConverter .
 </cite>

@@ -1,11 +1,11 @@
 
-from ImageTranslatorLib.ModelBase import BaseModel
+from ModalityConverterLib.ModelBase import BaseModel
 import slicer
 from slicer import vtkMRMLScalarVolumeNode
 import os
-from ImageTranslatorLib.UI.utils import PRINT_MODULE_SUFFIX
+from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
 
-"""Base class for FedSynthCT-Brain models in the ImageTranslator library."""
+"""Base class for FedSynthCT-Brain models in the ModalityConverter library."""
 class FedSynthBrainBaseModel(BaseModel):
     def __init__(self, modelKey: str, device: str = "cpu"):
         super().__init__(modelKey, device)
@@ -36,7 +36,7 @@ class FedSynthBrainBaseModel(BaseModel):
     
     def getPreprocessingTransform(self, maxSize, backgroundValue, isMri=False):
         from monai.transforms import EnsureChannelFirst, Compose, CenterSpatialCrop
-        from ImageTranslatorLib.ModelsImpl.FedSynthBrainModelsUtils import CustomResize, PadToCube, MRINormalize
+        from ModalityConverterLib.ModelsImpl.FedSynthBrainModelsUtils import CustomResize, PadToCube, MRINormalize
         
         steps = [
                 EnsureChannelFirst(channel_dim="no_channel"),

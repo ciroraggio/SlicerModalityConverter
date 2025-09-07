@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>ImageTranslator</class>
- <widget class="qMRMLWidget" name="ImageTranslator">
+ <class>ModalityConverter</class>
+ <widget class="qMRMLWidget" name="ModalityConverter">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -405,7 +405,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>ImageTranslator</sender>
+   <sender>ModalityConverter</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
    <receiver>inputSelector</receiver>
    <slot>setMRMLScene(vtkMRMLScene*)</slot>
@@ -421,7 +421,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>ImageTranslator</sender>
+   <sender>ModalityConverter</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
    <receiver>maskSelector</receiver>
    <slot>setMRMLScene(vtkMRMLScene*)</slot>
@@ -437,7 +437,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>ImageTranslator</sender>
+   <sender>ModalityConverter</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
    <receiver>outputSelector</receiver>
    <slot>setMRMLScene(vtkMRMLScene*)</slot>
