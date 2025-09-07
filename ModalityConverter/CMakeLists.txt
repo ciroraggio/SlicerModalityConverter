@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-set(MODULE_NAME ImageTranslator)
+set(MODULE_NAME ModalityConverter)
 
 #-----------------------------------------------------------------------------
 set(MODULE_PYTHON_SCRIPTS

@@ -1,8 +1,8 @@
 *.pyc
 .vscode
 *.onnx
-**/ImageTranslator/Resources/Models/*
-!**/ImageTranslator/Resources/Models/metadata.json
+**/ModalityConverter/Resources/Models/*
+!**/ModalityConverter/Resources/Models/metadata.json
 *.ipynb
 *.ipynb_checkpoints
 *__pycache__*

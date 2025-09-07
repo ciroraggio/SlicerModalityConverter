@@ -15,21 +15,21 @@ from slicer.parameterNodeWrapper import (
 from slicer import vtkMRMLScalarVolumeNode
 
 #
-# ImageTranslator
+# ModalityConverter
 #
 
 
-class ImageTranslator(ScriptedLoadableModule):
+class ModalityConverter(ScriptedLoadableModule):
     """Uses ScriptedLoadableModule base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
     def __init__(self, parent):
-        from ImageTranslatorLib.UI.utils import HELP_TEXT, CONTRIBUTORS
+        from ModalityConverterLib.UI.utils import HELP_TEXT, CONTRIBUTORS
         ScriptedLoadableModule.__init__(self, parent)
 
-        self.parent.title = _("ImageTranslator")
-        self.parent.categories = [translate("qSlicerAbstractCoreModule", "ImageToImageHub")]
+        self.parent.title = _("ModalityConverter")
+        self.parent.categories = [translate("qSlicerAbstractCoreModule", "Image Synthesis")]
         self.parent.dependencies = []
         self.parent.contributors = CONTRIBUTORS
         self.parent.helpText = _(HELP_TEXT)
@@ -40,23 +40,23 @@ class ImageTranslator(ScriptedLoadableModule):
 
 
 #
-# ImageTranslatorParameterNode
+# ModalityConverterParameterNode
 #
 
 
 @parameterNodeWrapper
-class ImageTranslatorParameterNode:
+class ModalityConverterParameterNode:
     inputVolume: vtkMRMLScalarVolumeNode
     maskVolume: vtkMRMLScalarVolumeNode
     outputVolume: vtkMRMLScalarVolumeNode  
 
 
 #
-# ImageTranslatorWidget
+# ModalityConverterWidget
 #
 
 
-class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
+class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     """Uses ScriptedLoadableModuleWidget base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
@@ -90,7 +90,7 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.sampleDataButton.setEnabled(state)
                 
     def onHelpButtonClicked(self):
-        from ImageTranslatorLib.UI.HelpDialog import HelpDialog
+        from ModalityConverterLib.UI.HelpDialog import HelpDialog
         dialog = HelpDialog(slicer.util.mainWindow())
         dialog.exec_()
 
@@ -166,7 +166,7 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.modelDescriptionLabel.setText(f"<b>Description</b>:<br>{self.selectedModelDescription}")
 
     def onInstallRequirements(self):
-        from ImageTranslatorLib.UI.utils import PRINT_MODULE_SUFFIX
+        from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
         
         if not slicer.util.confirmOkCancelDisplay(
             "The dependencies needed for the extension will be installed, the operation may take a few minutes. A Slicer restart will be necessary.",
@@ -200,7 +200,7 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # Additional widgets can be instantiated manually and added to self.layout.
         from qt import QIcon, QSize, QTimer
         
-        uiWidget = slicer.util.loadUI(self.resourcePath("UI/ImageTranslator.ui"))
+        uiWidget = slicer.util.loadUI(self.resourcePath("UI/ModalityConverter.ui"))
         self.layout.addWidget(uiWidget)
 
         self.ui = slicer.util.childWidgetVariables(uiWidget)
@@ -213,7 +213,7 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Create logic class. Logic implements all computations that should be possible to run
         # in batch mode, without a graphical user interface.
-        self.logic = ImageTranslatorLogic()
+        self.logic = ModalityConverterLogic()
 
         # Connections
 
@@ -287,7 +287,7 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             if firstVolumeNode:
                 self._parameterNode.inputVolume = firstVolumeNode
             
-    def setParameterNode(self, inputParameterNode: Optional[ImageTranslatorParameterNode]) -> None:
+    def setParameterNode(self, inputParameterNode: Optional[ModalityConverterParameterNode]) -> None:
         """
         Set and observe parameter node.
         Observation is needed because when the parameter node is changed then the GUI must be updated immediately.
@@ -340,26 +340,26 @@ class ImageTranslatorWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.updateInfoLabel("Processing completed successfully.")
             self.setMainButtonsState(True)
 #
-# ImageTranslatorLogic
+# ModalityConverterLogic
 #
 
-class ImageTranslatorLogic(ScriptedLoadableModuleLogic):
+class ModalityConverterLogic(ScriptedLoadableModuleLogic):
     def __init__(self) -> None:
         """Called when the logic class is instantiated. Can be used for initializing member variables."""
         ScriptedLoadableModuleLogic.__init__(self)
         self.model = None
 
     def getParameterNode(self):
-        return ImageTranslatorParameterNode(super().getParameterNode())
+        return ModalityConverterParameterNode(super().getParameterNode())
 
-    def getModelInstance(self, selectedModelModuleName, selectedModelKey, basePackage="ImageTranslatorLib.ModelsImpl", device="cpu"):
+    def getModelInstance(self, selectedModelModuleName, selectedModelKey, basePackage="ModalityConverterLib.ModelsImpl", device="cpu"):
         """
         Dynamically loads and returns an instance of a model class based on the provided module name and model key.
 
         Parameters:
         - selectedModelModuleName (str): The name of the module containing the model class.
         - selectedModelKey (str): The key identifying the model in the model registry.
-        - basePackage (str): The base package path where the model modules are located. Defaults to "ImageTranslatorLib.ModelsImpl".
+        - basePackage (str): The base package path where the model modules are located. Defaults to "ModalityConverterLib.ModelsImpl".
 
         Returns:
         - object: An instance of the model class corresponding to the provided key.
@@ -370,7 +370,7 @@ class ImageTranslatorLogic(ScriptedLoadableModuleLogic):
         """
 
         import importlib
-        from ImageTranslatorLib.ModelBase import MODEL_REGISTRY
+        from ModalityConverterLib.ModelBase import MODEL_REGISTRY
 
         # Importing the model module dynamically will trigger the registration of the model class in the model registry
         fullModulePath = f"{basePackage}.{selectedModelModuleName}"

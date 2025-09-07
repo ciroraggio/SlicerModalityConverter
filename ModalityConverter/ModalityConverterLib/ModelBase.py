@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import slicer
 from slicer import vtkMRMLScalarVolumeNode
-from ImageTranslatorLib.UI.utils import PRINT_MODULE_SUFFIX
+from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
 
 # Global registry for model classes
 MODEL_REGISTRY = {}
@@ -15,7 +15,7 @@ def register_model(key):
         return cls
     return decorator
 
-"""Base class for all models in the ImageTranslator library."""
+"""Base class for all models in the ModalityConverter library."""
 class BaseModel(ABC):
     def __init__(self, modelKey: str, device: str = "cpu"):
         self.modelKey = modelKey
