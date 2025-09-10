@@ -4,11 +4,20 @@ set(MODULE_NAME ModalityConverter)
 #-----------------------------------------------------------------------------
 set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}.py
+  ${MODULE_NAME}Lib/ModelBase.py
+  ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainBaseModel.py
+  ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainFuModel.py
+  ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainLiModel.py
+  ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainSpadeaModel.py
+  ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainModelsUtils.py
+  ${MODULE_NAME}Lib/UI/HelpDialog.py
+  ${MODULE_NAME}Lib/UI/utils.py
   )
 
 set(MODULE_PYTHON_RESOURCES
   Resources/Icons/${MODULE_NAME}.png
   Resources/UI/${MODULE_NAME}.ui
+  Resources/Icons/book.png
   )
 
 #-----------------------------------------------------------------------------
