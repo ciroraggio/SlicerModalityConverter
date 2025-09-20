@@ -1,6 +1,13 @@
-# SlicerModalityConverter
+# SlicerModalityConverter - Slicer 5.8.1 Compatible
 
-- [SlicerModalityConverter](#slicermodalityconverter)
+[![3D Slicer](https://img.shields.io/badge/3D%20Slicer-5.8.1%20Compatible-blue)](https://www.slicer.org/)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-green)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Medical Imaging](https://img.shields.io/badge/Medical%20Imaging-AI%20Translation-purple)](https://github.com/soumen02/SlicerModalityConverter)
+
+> **🔧 Refactored for Slicer 5.8.1 Compatibility** - This fork has been specifically updated to work with 3D Slicer 5.8.1, addressing compatibility issues with the original version that required Slicer 5.9.0+.
+
+- [SlicerModalityConverter - Slicer 5.8.1 Compatible](#slicermodalityconverter---slicer-581-compatible)
   - [Installation](#installation)
   - [ModalityConverter](#modalityconverter)
     - [Key Features](#key-features)
@@ -8,17 +15,40 @@
     - [Example (with video)](#example-with-video)
     - [How to Integrate a Custom Model](#how-to-integrate-a-custom-model)
     - [Summary of Requirements](#summary-of-requirements)
+  - [Slicer 5.8.1 Compatibility](#slicer-581-compatibility)
   - [How to Contribute](#how-to-contribute)
   - [How to Cite](#how-to-cite)
 
-SlicerModalityConverter is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation.
+**SlicerModalityConverter** is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation. This fork has been specifically refactored to ensure compatibility with **3D Slicer 5.8.1**, making it accessible to users who haven't upgraded to the latest Slicer version.
 
-The ModalityConverter module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
+The ModalityConverter module integrates multiple deep learning models trained for different kinds of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface for medical image synthesis and AI-powered modality conversion.
 
 ## Installation
 
-This extension is available in the official [3D Slicer Extensions Index](https://github.com/Slicer/ExtensionsIndex/tree/main), under the **Image Synthesis** category (from 3D Slicer version 5.8.1 onwards).  
-You can install it directly using the **Extension Manager** in 3D Slicer.  
+### 🎯 **For Slicer 5.8.1 Users:**
+
+This **SlicerModalityConverter fork** is specifically designed for **3D Slicer 5.8.1** compatibility. The original version requires Slicer 5.9.0+, but this fork works seamlessly with the older version.
+
+### 📦 **Installation Methods:**
+
+1. **Direct Installation (Recommended):**
+   - Download this fork: `https://github.com/soumen02/SlicerModalityConverter`
+   - Install via **Extension Manager** in 3D Slicer 5.8.1
+   - Or build from source using CMake
+
+2. **From Source:**
+   ```bash
+   git clone https://github.com/soumen02/SlicerModalityConverter.git
+   cd SlicerModalityConverter
+   # Follow Slicer extension building instructions
+   ```
+
+### 🔍 **Search Keywords:**
+- `3D Slicer 5.8.1 ModalityConverter`
+- `SlicerModalityConverter backward compatibility`
+- `Medical image translation Slicer 5.8.1`
+- `MRI to CT conversion Slicer extension`
+- `Image synthesis Slicer 5.8.1`
 
 Here is a short [video tutorial](https://youtu.be/CBkKGilpO1w?feature=shared) on how to install extensions.
 
@@ -219,6 +249,39 @@ Here is a basic example to get started:
 
 ---
 
+## Slicer 5.8.1 Compatibility
+
+This fork has been specifically refactored to ensure compatibility with **3D Slicer 5.8.1**. The following changes were made to address compatibility issues:
+
+### 🔧 **Key Refactoring Changes:**
+
+- **Replaced `parameterNodeWrapper` decorator** with manual parameter node implementation
+- **Fixed observer pattern issues** that caused warnings in Slicer 5.8.1
+- **Updated dependency installation** to handle missing GPU packages gracefully
+- **Improved UI element connections** for better parameter synchronization
+- **Enhanced error handling** for cross-version compatibility
+
+### 🎯 **Why This Fork?**
+
+- **Original version requires Slicer 5.9.0+** - Many users still use Slicer 5.8.1
+- **Backward compatibility** - Works seamlessly with older Slicer installations
+- **Same functionality** - All features preserved from the original
+- **Better error handling** - More robust dependency management
+
+### 📋 **System Requirements:**
+
+- **3D Slicer 5.8.1** (tested and verified)
+- **Python 3.8+** (included with Slicer)
+- **Optional GPU support** (CUDA-compatible GPU recommended for faster processing)
+
+### 🚀 **Installation for Slicer 5.8.1:**
+
+1. **Clone this fork** instead of the original repository
+2. **Install via Extension Manager** in Slicer 5.8.1
+3. **Or build from source** using the provided CMakeLists.txt
+
+---
+
 ## How to Contribute
 
 Integrating new models for different modalities is encouraged!
@@ -236,3 +299,31 @@ The ModalityConverter 3D Slicer module should be cited as follows:
 <cite>
 Raggio C.B., Zaffino P., Spadea M.F., SlicerModalityConverter: An Open-Source 3D Slicer Extension for Medical Image-to-Image Translation, 2025, https://github.com/ciroraggio/SlicerModalityConverter .
 </cite>
+
+---
+
+## 🔍 **SEO Keywords & Search Terms**
+
+This repository is optimized for the following search terms to help users find the Slicer 5.8.1 compatible version:
+
+- **3D Slicer 5.8.1 ModalityConverter**
+- **SlicerModalityConverter backward compatibility**
+- **Medical image translation Slicer 5.8.1**
+- **MRI to CT conversion Slicer extension**
+- **Image synthesis Slicer 5.8.1**
+- **Deep learning medical imaging Slicer**
+- **AI image translation 3D Slicer**
+- **Modality conversion Slicer 5.8.1**
+- **Slicer extension compatibility fix**
+- **Medical AI Slicer 5.8.1**
+
+---
+
+## 📊 **Repository Stats**
+
+- **Original Repository:** [ciroraggio/SlicerModalityConverter](https://github.com/ciroraggio/SlicerModalityConverter)
+- **This Fork:** [soumen02/SlicerModalityConverter](https://github.com/soumen02/SlicerModalityConverter)
+- **Slicer Version:** 5.8.1 Compatible
+- **Python Version:** 3.8+
+- **License:** MIT
+- **Category:** Medical Imaging, AI, Deep Learning
