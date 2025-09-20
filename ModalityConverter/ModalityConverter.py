@@ -196,11 +196,15 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     
     def populateDeviceDropdown(self):
         if self.dependenciesInstalled:
-            from torch.cuda import is_available as cuda_available, device_count, get_device_name
-            if cuda_available():
-                for i in range(device_count()):
-                    deviceName = get_device_name(i)
-                    self.ui.deviceList.addItem(f"gpu {i} - {deviceName}", {"key": f"cuda:{i}"})
+            try:
+                from torch.cuda import is_available as cuda_available, device_count, get_device_name
+                if cuda_available():
+                    for i in range(device_count()):
+                        deviceName = get_device_name(i)
+                        self.ui.deviceList.addItem(f"gpu {i} - {deviceName}", {"key": f"cuda:{i}"})
+            except ImportError:
+                from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
+                print(f"{PRINT_MODULE_SUFFIX} PyTorch CUDA not available, only CPU inference will be supported.")
 
     def onDeviceSelected(self, index):
         """Handle device selection."""
@@ -237,7 +241,14 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
                 print(f"{PRINT_MODULE_SUFFIX} Installing {dep}...")
                 slicer.util.pip_install(dep) if dep != "monai" else slicer.util.pip_install("monai[itk]")
             
-            slicer.util.pip_install("onnxruntime-gpu")
+            # Try to install onnxruntime-gpu, but fall back to regular onnxruntime if it fails
+            try:
+                print(f"{PRINT_MODULE_SUFFIX} Installing onnxruntime-gpu...")
+                slicer.util.pip_install("onnxruntime-gpu")
+                print(f"{PRINT_MODULE_SUFFIX} onnxruntime-gpu installed successfully.")
+            except Exception as gpu_error:
+                print(f"{PRINT_MODULE_SUFFIX} onnxruntime-gpu not available for this platform: {gpu_error}")
+                print(f"{PRINT_MODULE_SUFFIX} GPU acceleration will not be available, but CPU inference will work.")
             
             print(f"{PRINT_MODULE_SUFFIX} All dependencies installed successfully.")
             slicer.app.restart()
