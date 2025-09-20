@@ -325,7 +325,6 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         if self._parameterNode:
             self._parameterNode.disconnectGui(self._parameterNodeGuiTag)
             self._parameterNodeGuiTag = None
-            self.removeObserver(self._parameterNode._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)
 
     def onSceneStartClose(self, caller, event) -> None:
         """Called just before the scene is closed."""
@@ -358,14 +357,10 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         """
         if self._parameterNode:
             self._parameterNode.disconnectGui(self._parameterNodeGuiTag)
-            self.removeObserver(self._parameterNode._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)
         self._parameterNode = inputParameterNode
         if self._parameterNode:
             # Manual GUI connection for Slicer 5.8.1 compatibility
             self._parameterNodeGuiTag = self._parameterNode.connectGui(self.ui)
-            # Add observer to the underlying VTK parameter node, not our wrapper
-            self.addObserver(self._parameterNode._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)
-            self._checkCanApply()
             
             # Manual connection of UI elements to parameter node
             self._connectUIElements()
@@ -387,6 +382,9 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self.ui.maskSelector.setCurrentNode(self._parameterNode.maskVolume)
         if self._parameterNode.outputVolume:
             self.ui.outputSelector.setCurrentNode(self._parameterNode.outputVolume)
+        
+        # Initial check to enable/disable the apply button
+        self._checkCanApply()
     
     def _onInputVolumeChanged(self, node):
         """Handle input volume selection change"""
@@ -407,12 +405,21 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self._checkCanApply()
 
     def _checkCanApply(self, caller=None, event=None) -> None:
-        if self._parameterNode and self._parameterNode.inputVolume and self._parameterNode.outputVolume:
+        from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
+        
+        hasInput = self._parameterNode and self._parameterNode.inputVolume
+        hasOutput = self._parameterNode and self._parameterNode.outputVolume
+        
+        print(f"{PRINT_MODULE_SUFFIX} Checking apply button: input={hasInput}, output={hasOutput}")
+        
+        if hasInput and hasOutput:
             self.ui.applyButton.toolTip = _("Compute output volume")
             self.ui.applyButton.enabled = True
+            print(f"{PRINT_MODULE_SUFFIX} Apply button enabled")
         else:
             self.ui.applyButton.toolTip = _("Select input and output volume nodes")
             self.ui.applyButton.enabled = False
+            print(f"{PRINT_MODULE_SUFFIX} Apply button disabled - missing volumes")
 
     def onSampleDataButtonClicked(self):
         """Open "Sample Data" module when user clicks "Download sample" button."""
