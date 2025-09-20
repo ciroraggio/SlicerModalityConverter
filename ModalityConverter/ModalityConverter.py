@@ -8,9 +8,7 @@ from slicer.i18n import tr as _
 from slicer.i18n import translate
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
-from slicer.parameterNodeWrapper import (
-    parameterNodeWrapper,
-)
+# parameterNodeWrapper not available in Slicer 5.8.1, using manual implementation
 
 from slicer import vtkMRMLScalarVolumeNode
 
@@ -29,7 +27,7 @@ class ModalityConverter(ScriptedLoadableModule):
         ScriptedLoadableModule.__init__(self, parent)
 
         self.parent.title = _("ModalityConverter")
-        self.parent.categories = [translate("qSlicerAbstractCoreModule", "Image Synthesis")]
+        self.parent.categories = [translate("qSlicerAbstractCoreModule", "Testing")]
         self.parent.dependencies = []
         self.parent.contributors = CONTRIBUTORS
         self.parent.helpText = _(HELP_TEXT)
@@ -44,11 +42,66 @@ class ModalityConverter(ScriptedLoadableModule):
 #
 
 
-@parameterNodeWrapper
 class ModalityConverterParameterNode:
-    inputVolume: vtkMRMLScalarVolumeNode
-    maskVolume: vtkMRMLScalarVolumeNode
-    outputVolume: vtkMRMLScalarVolumeNode  
+    """Parameter node for ModalityConverter module - manual implementation for Slicer 5.8.1 compatibility"""
+    
+    def __init__(self, parameterNode):
+        self._parameterNode = parameterNode
+        self._parameterNode.SetParameter("inputVolume", "")
+        self._parameterNode.SetParameter("maskVolume", "")
+        self._parameterNode.SetParameter("outputVolume", "")
+    
+    @property
+    def inputVolume(self):
+        nodeId = self._parameterNode.GetParameter("inputVolume")
+        if nodeId:
+            return slicer.mrmlScene.GetNodeByID(nodeId)
+        return None
+    
+    @inputVolume.setter
+    def inputVolume(self, value):
+        if value:
+            self._parameterNode.SetParameter("inputVolume", value.GetID())
+        else:
+            self._parameterNode.SetParameter("inputVolume", "")
+    
+    @property
+    def maskVolume(self):
+        nodeId = self._parameterNode.GetParameter("maskVolume")
+        if nodeId:
+            return slicer.mrmlScene.GetNodeByID(nodeId)
+        return None
+    
+    @maskVolume.setter
+    def maskVolume(self, value):
+        if value:
+            self._parameterNode.SetParameter("maskVolume", value.GetID())
+        else:
+            self._parameterNode.SetParameter("maskVolume", "")
+    
+    @property
+    def outputVolume(self):
+        nodeId = self._parameterNode.GetParameter("outputVolume")
+        if nodeId:
+            return slicer.mrmlScene.GetNodeByID(nodeId)
+        return None
+    
+    @outputVolume.setter
+    def outputVolume(self, value):
+        if value:
+            self._parameterNode.SetParameter("outputVolume", value.GetID())
+        else:
+            self._parameterNode.SetParameter("outputVolume", "")
+    
+    def connectGui(self, ui):
+        """Connect GUI elements to parameter node - simplified for 5.8.1 compatibility"""
+        # This is a simplified version - the full parameterNodeWrapper functionality
+        # would require more complex implementation
+        return None
+    
+    def disconnectGui(self, guiTag):
+        """Disconnect GUI elements from parameter node"""
+        pass  
 
 
 #
@@ -261,7 +314,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         if self._parameterNode:
             self._parameterNode.disconnectGui(self._parameterNodeGuiTag)
             self._parameterNodeGuiTag = None
-            self.removeObserver(self._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)
+            self.removeObserver(self._parameterNode._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)
 
     def onSceneStartClose(self, caller, event) -> None:
         """Called just before the scene is closed."""
@@ -294,13 +347,52 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         """
         if self._parameterNode:
             self._parameterNode.disconnectGui(self._parameterNodeGuiTag)
-            self.removeObserver(self._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)
+            self.removeObserver(self._parameterNode._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)
         self._parameterNode = inputParameterNode
         if self._parameterNode:
-            # Note: in the .ui file, a Qt dynamic property called "SlicerParameterName" is set on each
-            # ui element that needs connection.
+            # Manual GUI connection for Slicer 5.8.1 compatibility
             self._parameterNodeGuiTag = self._parameterNode.connectGui(self.ui)
-            self.addObserver(self._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)
+            # Add observer to the underlying VTK parameter node, not our wrapper
+            self.addObserver(self._parameterNode._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)
+            self._checkCanApply()
+            
+            # Manual connection of UI elements to parameter node
+            self._connectUIElements()
+
+    def _connectUIElements(self):
+        """Manually connect UI elements to parameter node for Slicer 5.8.1 compatibility"""
+        if not self._parameterNode:
+            return
+            
+        # Connect input selector
+        self.ui.inputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self._onInputVolumeChanged)
+        self.ui.maskSelector.connect("currentNodeChanged(vtkMRMLNode*)", self._onMaskVolumeChanged)
+        self.ui.outputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self._onOutputVolumeChanged)
+        
+        # Set initial values
+        if self._parameterNode.inputVolume:
+            self.ui.inputSelector.setCurrentNode(self._parameterNode.inputVolume)
+        if self._parameterNode.maskVolume:
+            self.ui.maskSelector.setCurrentNode(self._parameterNode.maskVolume)
+        if self._parameterNode.outputVolume:
+            self.ui.outputSelector.setCurrentNode(self._parameterNode.outputVolume)
+    
+    def _onInputVolumeChanged(self, node):
+        """Handle input volume selection change"""
+        if self._parameterNode:
+            self._parameterNode.inputVolume = node
+            self._checkCanApply()
+    
+    def _onMaskVolumeChanged(self, node):
+        """Handle mask volume selection change"""
+        if self._parameterNode:
+            self._parameterNode.maskVolume = node
+            self._checkCanApply()
+    
+    def _onOutputVolumeChanged(self, node):
+        """Handle output volume selection change"""
+        if self._parameterNode:
+            self._parameterNode.outputVolume = node
             self._checkCanApply()
 
     def _checkCanApply(self, caller=None, event=None) -> None:
