@@ -17,10 +17,10 @@ The ModalityConverter module integrates multiple deep learning models trained fo
 
 ## Installation
 
-This extension is available in the official [3D Slicer Extensions Index](https://github.com/Slicer/ExtensionsIndex/tree/main), under the **Image Synthesis** category (from 3D Slicer version 5.9.0 onwards).  
-You can install it directly using the **Extension Manager** in 3D Slicer.  
+This extension is available in the official [3D Slicer Extensions Index](https://github.com/Slicer/ExtensionsIndex/tree/main), under the **Image Synthesis** category (from version 5.9.0 onwards).  
+You can install it directly through the **Extension Manager** in 3D Slicer ≥ 5.9.0, or [manually](https://extensions.slicer.org/) for earlier versions (< 5.9.0).  
 
-Here is a short [video tutorial](https://youtu.be/CBkKGilpO1w?feature=shared) on how to install extensions.
+Here is a short [video tutorial](https://youtu.be/QsxzjQb05D4?feature=shared) showing how to install extensions both via the Extension Manager and manually.
 
 ## ModalityConverter
 
