@@ -1,4 +1,15 @@
 # SlicerModalityConverter
+[![3D Slicer](https://img.shields.io/badge/3D_Slicer_-_5.8_Compatible-blu?style=plastic&color=blue)](https://download.slicer.org/)
+[![3D Slicer](https://img.shields.io/badge/3D_Slicer_-_5.9_Compatible-blue?style=plastic&color=B7E1E1)](https://download.slicer.org/)
+[![3D Slicer Extension Index](https://img.shields.io/badge/3D_Slicer-Extension_Index-blue?style=plastic&color=9980BA)](https://extensions.slicer.org/catalog)
+[![License](https://img.shields.io/badge/License-MIT-purple?style=plastic&color=purple)](LICENSE)
+![Image_Synthesis](https://img.shields.io/badge/Medical-Image_Synthesis-white?style=plastic&color=ed7d3a)
+![MedicalAI](https://img.shields.io/badge/Medical-Artificial_Intelligence-white?style=plastic&color=8cd867)
+![MedicalI2I](https://img.shields.io/badge/Medical-Image_To_Image_Tranlastion-white?style=plastic&color=2fbf71)
+
+<center><img src="ModalityConverter.png" alt="drawing" style="width:700px;"/></center>
+
+---
 
 - [SlicerModalityConverter](#slicermodalityconverter)
   - [Installation](#installation)
@@ -11,14 +22,16 @@
   - [How to Contribute](#how-to-contribute)
   - [How to Cite](#how-to-cite)
 
-SlicerModalityConverter is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation.
+---
+
+***SlicerModalityConverter*** is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation.
 
 The ModalityConverter module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
 
 ## Installation
 
 This extension is available in the official [3D Slicer Extensions Index](https://github.com/Slicer/ExtensionsIndex/tree/main), under the **Image Synthesis** category (from version 5.9.0 onwards).  
-You can install it directly through the **Extension Manager** in 3D Slicer ≥ 5.9.0, or [manually](https://extensions.slicer.org/) for earlier versions (< 5.9.0).  
+**You can install it directly through the Extension Manager in 3D Slicer ≥ 5.9.0**, **or** [**manually**](https://extensions.slicer.org/) **for earlier versions** (< 5.9.0).  
 
 Here is a short [video tutorial](https://youtu.be/QsxzjQb05D4?feature=shared) showing how to install extensions both via the Extension Manager and manually.
 
@@ -37,7 +50,7 @@ Here is a short [video tutorial](https://youtu.be/QsxzjQb05D4?feature=shared) sh
 - Optionally provide a binary mask to focus the translation on specific regions
 - Click "Run" to generate the synthetic image
 
-This extension is intended for research purposes only. If a model is applied to an input image of the wrong type (i.e. using a CT or CBCT instead of an MRI for an MRI-to-sCT model), the output will be wrong or unpredictable.
+This extension is intended for **research purposes only**. If a model is applied to an input image of the wrong type (i.e. using a CT or CBCT instead of an MRI for an MRI-to-sCT model), the output will be wrong or unpredictable.
 
 ### Example (with video)
 
