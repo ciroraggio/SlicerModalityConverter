@@ -1,8 +1,7 @@
-import numpy as np
-import onnxruntime as ort
-import scipy.ndimage
+import os
+import slicer
 from ModalityConverterLib.ModelBase import BaseModel, register_model
-
+from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
 
 @register_model("unet2pix_t1_t2")
 class Unet2PixT1T2Model(BaseModel):
@@ -11,17 +10,34 @@ class Unet2PixT1T2Model(BaseModel):
         self.ort_session = None
 
     def _loadModelFromPath(self, modelPath):
-        providers = ['CPUExecutionProvider']
-        if self.device == 'cuda':
-            providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+        try:
+            import onnxruntime as ort
 
-        self.ort_session = ort.InferenceSession(modelPath, providers=providers)
-        return self.ort_session
+            """Load the model using ONNX Runtime."""
+            if not os.path.exists(modelPath):
+                raise FileNotFoundError(f"Model file not found at {modelPath}")
+            
+            if self.device != "cpu" and ort.get_device() != "GPU":
+            # if the user wants to use the GPU but onnxruntime is somehow not built with GPU support
+                slicer.util.errorDisplay("A GPU device is selected, but ONNX Runtime is not built with GPU support. Installation of ONNX Runtime GPU is required. Slicer will restart after installation.")
+                slicer.util.pip_install("onnxruntime-gpu")
+                slicer.app.restart()
+                
+            providers = ["CUDAExecutionProvider", "CPUExecutionProvider"] if self.device.startswith("cuda") else ["CPUExecutionProvider"]
+            
+            print(f"{PRINT_MODULE_SUFFIX} Loading ONNX model with providers: {providers}")
+            
+            self.ort_session = ort.InferenceSession(modelPath, providers=providers)
+            return self.ort_session
+        
+        except Exception as e:
+            raise RuntimeError(f"Failed to load ONNX model from {modelPath}: {str(e)}")
 
     def _percnorm(self, arr, lperc=5, uperc=99.5):
-        lowerbound = np.percentile(arr, lperc)
-        upperbound = np.percentile(arr, uperc)
-        np.clip(arr, lowerbound, upperbound, out=arr)
+        from numpy import percentile, clip
+        lowerbound = percentile(arr, lperc)
+        upperbound = percentile(arr, uperc)
+        clip(arr, lowerbound, upperbound, out=arr)
         return arr
 
     def _normalize(self, img):
@@ -32,6 +48,8 @@ class Unet2PixT1T2Model(BaseModel):
         return img - img_min
 
     def _resize_slice(self, slice_2d, target_h, target_w):
+        from scipy.ndimage import zoom
+
         """
         Resizes slice to target dimensions using interpolation.
         Required because the model expects fixed input size (224x192).
@@ -39,54 +57,51 @@ class Unet2PixT1T2Model(BaseModel):
         h, w = slice_2d.shape
         zoom_factors = (target_h / h, target_w / w)
         # Order 1 = bilinear interpolation
-        return scipy.ndimage.zoom(slice_2d, zoom_factors, order=1)
+        return zoom(slice_2d, zoom_factors, order=1)
 
     def runInference(self, inputVolume, outputVolume, inputMask=None, showAllFiles=True):
-        """
-        Logic:
-        1. Copy full input (T1) to output.
-        2. Extract ONLY the central axial slice.
-        3. Resize to 224x192 -> Inference (Generate T2) -> Resize back.
-        4. Replace only the central slice in the output volume with the synthetic T2.
-        """
+        from numpy import float32, newaxis, zeros_like, zeros
 
-        outputVolume[:] = inputVolume[:]
+        if not isinstance(inputVolume, slicer.vtkMRMLScalarVolumeNode):
+            raise TypeError("Input must be a vtkMRMLScalarVolumeNode")
+        
+        print(f"{PRINT_MODULE_SUFFIX} Preprocessing input volume...")
 
-        # Original dimensions: [Depth, Height, Width]
-        d_orig, h_orig, w_orig = inputVolume.shape
-        center_idx = d_orig // 2
+        inputNp = slicer.util.arrayFromVolume(inputVolume)
+        d_orig, h_orig, w_orig = inputNp.shape
+        outputNp = zeros_like(inputNp, dtype=float32)
 
-        # Extract slice (copy to ensure float32 processing)
-        slice_orig = inputVolume[center_idx, :, :].copy().astype(np.float32)
+        for z in range(d_orig):
+            # This model was trained on axial slice, thus extract axial slice
+            slice_orig = inputNp[z, :, :].copy().astype(float32)
 
-        # Preprocessing
-        slice_proc = self._percnorm(slice_orig)
-        slice_proc = self._normalize(slice_proc)
+            # Preprocessing
+            slice_proc = self._percnorm(slice_orig)
+            slice_proc = self._normalize(slice_proc)
+            target_h, target_w = 224, 192
+            slice_input_model = self._resize_slice(slice_proc, target_h, target_w)
 
-        # Resize for model (Target: H=224, W=192)
-        target_h, target_w = 224, 192
-        slice_input_model = self._resize_slice(slice_proc, target_h, target_w)
+            # transform slice in batch shape
+            model_input_tensor = slice_input_model[newaxis, newaxis, :, :]
 
-        # Prepare ONNX tensor [1, 1, 224, 192]
-        input_tensor = slice_input_model[np.newaxis, np.newaxis, :, :]
+            input_name = self.ort_session.get_inputs()[0].name
+            timestep_name = self.ort_session.get_inputs()[1].name
+            timestep_input = zeros((1,), dtype=float32)
 
-        # Get ONNX input names
-        input_name = self.ort_session.get_inputs()[0].name
-        timestep_name = self.ort_session.get_inputs()[1].name
-        timestep_input = np.zeros((1,), dtype=np.float32)
+            ort_inputs = {input_name: model_input_tensor, timestep_name: timestep_input}
+            predicted_slice = self.ort_session.run(None, ort_inputs)[0].squeeze()  # [224, 192]
+ 
+            # resize to original dimension
+            generated_slice_final = self._resize_slice(predicted_slice, h_orig, w_orig)
 
-        # Inference
-        ort_inputs = {
-            input_name: input_tensor,
-            timestep_name: timestep_input
-        }
-        result = self.ort_session.run(None, ort_inputs)
+            generated_slice_final = (generated_slice_final - generated_slice_final.min())
+            generated_slice_final /= (generated_slice_final.max() + 1e-8)
+            generated_slice_final *= inputNp.max()
 
-        # Model output is [1, 1, 224, 192] -> squeeze to [224, 192]
-        generated_slice_small = result[0].squeeze()
+            outputNp[z, :, :] = generated_slice_final
 
-        # Post-processing: Resize back to patient original dimensions
-        generated_slice_final = self._resize_slice(generated_slice_small, h_orig, w_orig)
-
-        # Insert generated T2 slice back into volume
-        outputVolume[center_idx, :, :] = generated_slice_final
+        slicer.util.updateVolumeFromArray(outputVolume, outputNp)
+        outputVolume.CopyOrientation(inputVolume)
+        slicer.util.resetSliceViews()
+        return outputNp
+    
