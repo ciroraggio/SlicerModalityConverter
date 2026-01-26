@@ -6,7 +6,7 @@ class CustomResize(Transform):
 
     def __call__(self, img):
         from monai.transforms import Resize
-        
+
         # Assuming channel-first format
         currentSize = img.shape[1:]
         newSize = [min(dim, self.maxSize) for dim in currentSize]
@@ -36,7 +36,8 @@ class PadToCube(Transform):
         padWEnd = self.size - w - padW
 
         padding = (padW, padWEnd, padH, padHEnd, padD, padDEnd)
-        paddedImg = pad(input=img, pad=padding, mode=self.mode, value=self.backgroundValue)
+        paddedImg = pad(input=img, pad=padding, mode=self.mode,
+                        value=self.backgroundValue)
 
         return paddedImg
 
@@ -52,3 +53,27 @@ class MRINormalize(Transform):
             img /= img.max() - img.min()
             img = nan_to_num(img, nan=0)
             return img
+
+class LUTClipping(Transform):
+    """
+    Transformation applying clipping of HU values and linear normalisation (LUT) as reported in:
+    Vicario, Celia Martín, et al. "Normalization techniques for cnn based analysis of surgical cone beam CT volumes." Medical Imaging 2022: Image Processing. Vol. 12032. SPIE, 2022.
+
+    Parameters:
+        keys (list): List of keys in the dictionary on which to apply the transformation.
+        hu_min (float): Minimum threshold for clipping (default -710 HU).
+        hu_max (float): Maximum threshold for clipping (default 1640 HU).
+    """
+
+    def __init__(self, hu_min=-710, hu_max=1640):
+        self.hu_min = hu_min
+        self.hu_max = hu_max
+
+    def __call__(self, image):
+        from torch import clip
+        
+        clipped = clip(image, self.hu_min, self.hu_max)
+        # Linear mapping of range [hu_min, hu_max] in [0, 1]
+        result = (clipped - self.hu_min) / (self.hu_max - self.hu_min)
+
+        return result
