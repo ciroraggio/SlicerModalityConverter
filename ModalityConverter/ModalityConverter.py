@@ -50,7 +50,6 @@ class ModalityConverterParameterNode:
     maskVolume: vtkMRMLScalarVolumeNode
     outputVolume: vtkMRMLScalarVolumeNode  
 
-
 #
 # ModalityConverterWidget
 #
@@ -71,6 +70,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self._parameterNodeGuiTag = None
         self.selectedModelKey = None
         self.selectedModelModuleName = None
+        self.maskRequiredForSelectedModel = False
         self.selectedDeviceKey = None
         self.requiredDeps = ["monai", "onnx", "onnxruntime", "torch"]
         self.dependenciesInstalled = False
@@ -113,16 +113,18 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
 
         for modelKey, model_info in self.models_metadata.items():
             displayName = model_info.get("display_name", modelKey)
-            description = model_info.get(
-                "description", "No description available.")
+            description = model_info.get("description", "No description available.")
             moduleName = model_info.get("module_name", None)
+            maskRequired = model_info.get("mask_required", False)
+            modelDeprecated = model_info.get("deprecated", None)
 
             if not modelKey or not moduleName:
                 slicer.util.errorDisplay(f"Model key '{modelKey}' or module_name '{moduleName}' is not defined in metadata.json.")
                 raise ValueError(f"Model key '{modelKey}' or module_name '{moduleName}' is not defined in metadata.json.")
-
-            self.ui.modelSelector.addItem(displayName, {
-                                          "key": modelKey, "description": description, "module_name": moduleName
+            
+            if not modelDeprecated:
+                self.ui.modelSelector.addItem(displayName, {
+                                          "key": modelKey, "description": description, "module_name": moduleName, "mask_required": maskRequired
                                           })
 
         self.ui.modelSelector.currentIndexChanged.connect(self.onModelSelected)
@@ -162,8 +164,11 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self.selectedModelKey = selected_data.get("key")
             self.selectedModelDescription = selected_data.get("description", "No description available.")
             self.selectedModelModuleName = selected_data.get("module_name")
+            self.maskRequiredForSelectedModel = selected_data.get("mask_required")
             self.ui.modelDescriptionLabel.setWordWrap(True)
             self.ui.modelDescriptionLabel.setText(f"<b>Description</b>:<br>{self.selectedModelDescription}")
+            self.ui.labelInputMask.setText("ROI Mask" if selected_data.get("mask_required") else "ROI Mask (Optional)")
+            self._checkCanApply()
 
     def onInstallRequirements(self):
         from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
@@ -292,9 +297,9 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         Set and observe parameter node.
         Observation is needed because when the parameter node is changed then the GUI must be updated immediately.
         """
-        if self._parameterNode:
+        """if self._parameterNode:
             self._parameterNode.disconnectGui(self._parameterNodeGuiTag)
-            self.removeObserver(self._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)
+            self.removeObserver(self._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)"""
         self._parameterNode = inputParameterNode
         if self._parameterNode:
             # Note: in the .ui file, a Qt dynamic property called "SlicerParameterName" is set on each
@@ -304,12 +309,32 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self._checkCanApply()
 
     def _checkCanApply(self, caller=None, event=None) -> None:
-        if self._parameterNode and self._parameterNode.inputVolume and self._parameterNode.outputVolume:
-            self.ui.applyButton.toolTip = _("Compute output volume")
-            self.ui.applyButton.enabled = True
-        else:
-            self.ui.applyButton.toolTip = _("Select input and output volume nodes")
-            self.ui.applyButton.enabled = False
+        hasIO = (
+            self._parameterNode and
+            self._parameterNode.inputVolume and
+            self._parameterNode.outputVolume
+        )
+
+        hasMaskIfNeeded = (
+            not self.maskRequiredForSelectedModel or
+            self._parameterNode.maskVolume
+        )
+
+        canApply = hasIO and hasMaskIfNeeded
+
+        self.ui.applyButton.enabled = bool(canApply)
+        self.ui.applyButton.toolTip = (
+            _("Compute output volume")
+            if canApply
+            else _(
+                    "Input mask is required for this model but it was not provided. "
+                    "The automatic extraction for this model is not yet supported.\n"
+                    "Please, provide a binary mask volume and retry!"
+                )
+            if self.maskRequiredForSelectedModel
+            else _("Select input and output volume nodes")
+        )
+
 
     def onSampleDataButtonClicked(self):
         """Open "Sample Data" module when user clicks "Download sample" button."""
