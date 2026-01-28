@@ -21,7 +21,7 @@
         "mask_required": false
     },
     "fedsynthct_pix2pix_cbct_headneck": {
-        "url": "https://github.com/ciroraggio/SlicerModalityConverter/releases/download/v1.0.0/fedsynthct_pix2pix_cbct_headneck.onnx",
+        "url": "https://github.com/ciroraggio/SlicerModalityConverter/releases/download/v1.2.0/fedsynthct_pix2pix_cbct_headneck.onnx",
         "display_name": "[CBCT-to-CT] [Head and Neck] FedSynthCT CBCT-Pix2Pix Model",
         "description": "This model was trained using the FedSynthCT framework, a federated learning framework for image to image translation.<br><b>Input</b>: CBCT scans.<br><b>Preprocess</b>: Crop/Pad/Resize/Clipping.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, A Privacy-Preserving Federated Learning Framework for Generalizable CBCT to Synthetic CT Translation in Head and Neck, arXiv:2506.08654, 2025, https://doi.org/10.48550/arXiv.2506.08654.</cite>",
         "module_name": "FedSynthCBCTPix2PixModel",
