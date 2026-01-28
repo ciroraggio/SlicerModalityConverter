@@ -239,6 +239,10 @@ Here is a basic example to get started:
 ### Skull Extraction from T1w MRI via Deep Learning-based Image-to-Image Translation in 3D Slicer
 
 
+https://github.com/user-attachments/assets/a1a254fb-775d-48dc-919d-2ca97be53338
+
+
+
 ## How to Contribute
 
 Integrating new models for different modalities is encouraged!
