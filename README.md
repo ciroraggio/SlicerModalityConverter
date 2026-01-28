@@ -236,7 +236,7 @@ Here is a basic example to get started:
 
 ## Tutorials
 
-### Skull Extraction from T1w MRI via Deep Learning-based Image-to-Image Translation in 3D Slicer
+### [Skull Extraction from T1w MRI via Deep Learning-based Image-to-Image Translation in 3D Slicer](https://github.com/ciroraggio/SlicerModalityConverter/blob/develop/ModalityConverter/assets/tutorials/MRItoCT-skull.mp4)
 
 
 
