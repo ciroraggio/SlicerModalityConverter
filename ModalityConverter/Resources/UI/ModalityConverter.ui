@@ -45,7 +45,7 @@
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="3" column="0">
-       <widget class="QLabel" name="label_3">
+       <widget class="QLabel" name="labelInputMask">
         <property name="toolTip">
          <string>A binary mask that defines the region of interest (ROI) for inference.</string>
         </property>

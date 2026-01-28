@@ -2,8 +2,8 @@
 from ModalityConverterLib.ModelBase import BaseModel
 import slicer
 from slicer import vtkMRMLScalarVolumeNode
-import os
 from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
+from ModalityConverterLib.Utils.modelLoadUtils import import_onnx_model
 
 """Base class for FedSynthCT-Brain models in the ModalityConverter library."""
 class FedSynthBrainBaseModel(BaseModel):
@@ -12,31 +12,14 @@ class FedSynthBrainBaseModel(BaseModel):
         
     def _loadModelFromPath(self, modelPath):
         try:
-            import onnxruntime as ort
-
-            """Load the model using ONNX Runtime."""
-            if not os.path.exists(modelPath):
-                raise FileNotFoundError(f"Model file not found at {modelPath}")
+            return import_onnx_model(modelPath=modelPath, device=self.device)
             
-            if self.device != "cpu" and ort.get_device() != "GPU":
-            # if the user wants to use the GPU but onnxruntime is somehow not built with GPU support
-                slicer.util.errorDisplay("A GPU device is selected, but ONNX Runtime is not built with GPU support. Installation of ONNX Runtime GPU is required. Slicer will restart after installation.")
-                slicer.util.pip_install("onnxruntime-gpu")
-                slicer.app.restart()
-                
-            providers = ["CUDAExecutionProvider", "CPUExecutionProvider"] if self.device.startswith("cuda") else ["CPUExecutionProvider"]
-            
-            print(f"{PRINT_MODULE_SUFFIX} Loading ONNX model with providers: {providers}")
-            
-            model = ort.InferenceSession(modelPath, providers=providers)
-            return model
-        
         except Exception as e:
             raise RuntimeError(f"Failed to load ONNX model from {modelPath}: {str(e)}")
-    
+        
     def getPreprocessingTransform(self, maxSize, backgroundValue, isMri=False):
         from monai.transforms import EnsureChannelFirst, Compose, CenterSpatialCrop
-        from ModalityConverterLib.ModelsImpl.FedSynthBrainModelsUtils import CustomResize, PadToCube, MRINormalize
+        from ModalityConverterLib.Utils.customTransformsUtils import CustomResize, PadToCube, MRINormalize
         
         steps = [
                 EnsureChannelFirst(channel_dim="no_channel"),

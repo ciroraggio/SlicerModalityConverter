@@ -19,6 +19,8 @@
     - [Example (with video)](#example-with-video)
     - [How to Integrate a Custom Model](#how-to-integrate-a-custom-model)
     - [Summary of Requirements](#summary-of-requirements)
+  - [Tutorials](#tutorials)
+    - [Skull Extraction from T1w MRI via Deep Learning-based Image-to-Image Translation in 3D Slicer](#skull-extraction-from-t1w-mri-via-deep-learning-based-image-to-image-translation-in-3d-slicer)
   - [How to Contribute](#how-to-contribute)
   - [How to Cite](#how-to-cite)
 
@@ -231,6 +233,12 @@ Here is a basic example to get started:
 | Download support    | Model file is auto-downloaded from the provided URL if it is not present locally |
 
 ---
+
+## Tutorials
+
+### [Skull Extraction from T1w MRI via Deep Learning-based Image-to-Image Translation in 3D Slicer](https://github.com/ciroraggio/SlicerModalityConverter/blob/develop/ModalityConverter/assets/tutorials/MRItoCT-skull.mp4)
+
+
 
 ## How to Contribute
 
