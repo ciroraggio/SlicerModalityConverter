@@ -9,9 +9,12 @@ set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainFuModel.py
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainLiModel.py
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainSpadeaModel.py
-  ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainModelsUtils.py
+  ${MODULE_NAME}Lib/ModelsImpl/FedSynthCBCTPix2PixModel.py
+  ${MODULE_NAME}Lib/ModelsImpl/Unet2PixT1T2Model.py
   ${MODULE_NAME}Lib/UI/HelpDialog.py
   ${MODULE_NAME}Lib/UI/utils.py
+  ${MODULE_NAME}Lib/Utils/customTransformsUtils.py
+  ${MODULE_NAME}Lib/Utils/modelLoadUtils.py
   )
 
 set(MODULE_PYTHON_RESOURCES
