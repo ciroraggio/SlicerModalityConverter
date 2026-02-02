@@ -72,7 +72,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.selectedModelModuleName = None
         self.maskRequiredForSelectedModel = False
         self.selectedDeviceKey = None
-        self.requiredDeps = ["monai", "onnx", "onnxruntime", "torch"]
+        self.requiredDeps = ["monai", "onnx", "onnxruntime", "torch", "nibabel"]
         self.dependenciesInstalled = False
 
     def checkDependencies(self):

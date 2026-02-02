@@ -109,8 +109,6 @@ class FedSynthCBCTPix2PixModel(BaseModel):
         preprocessedInput = preprocessedData["input"].cpu().numpy()
         preprocessedMask = preprocessedData["mask"].cpu().numpy()
 
-        print(preprocessedInput.min(), preprocessedInput.max())
-
         # Prepare containers
         sCT = {
             view: zeros(preprocessedInput.shape, device=self.device)
