@@ -1,6 +1,6 @@
 # SlicerModalityConverter
 [![3D Slicer](https://img.shields.io/badge/3D_Slicer_-_5.8_Compatible-blu?style=plastic&color=blue)](https://download.slicer.org/)
-[![3D Slicer](https://img.shields.io/badge/3D_Slicer_-_5.9_Compatible-blue?style=plastic&color=B7E1E1)](https://download.slicer.org/)
+[![3D Slicer](https://img.shields.io/badge/3D_Slicer_-_5.10_Compatible-blue?style=plastic&color=B7E1E1)](https://download.slicer.org/)
 [![3D Slicer Extension Index](https://img.shields.io/badge/3D_Slicer-Extension_Index-blue?style=plastic&color=9980BA)](https://extensions.slicer.org/catalog)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=plastic&color=purple)](LICENSE)
 ![Image_Synthesis](https://img.shields.io/badge/Medical-Image_Synthesis-white?style=plastic&color=ed7d3a)
@@ -16,6 +16,7 @@
   - [ModalityConverter](#modalityconverter)
     - [Key Features](#key-features)
     - [How to Use](#how-to-use)
+    - [Available Models](#available-models)
     - [Example (with video)](#example-with-video)
     - [How to Integrate a Custom Model](#how-to-integrate-a-custom-model)
     - [Summary of Requirements](#summary-of-requirements)
@@ -28,7 +29,7 @@
 
 ***SlicerModalityConverter*** is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation.
 
-The ModalityConverter module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
+The ModalityConverter module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT, CT-to-PET), providing a user-friendly interface.
 
 ## Installation
 
@@ -53,6 +54,17 @@ Here is a short [video tutorial](https://youtu.be/QsxzjQb05D4?feature=shared) sh
 - Click "Run" to generate the synthetic image
 
 This extension is intended for **research purposes only**. If a model is applied to an input image of the wrong type (i.e. using a CT or CBCT instead of an MRI for an MRI-to-sCT model), the output will be wrong or unpredictable.
+
+### Available Models
+
+| Modality | Anatomy  | Original Study | More Info |
+|----------|--------|--------------------|--------------------|
+| T1w-MRI → CT | Brain | Raggio et al., FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis (Li et al. architecture) | [Read more](https://www.sciencedirect.com/science/article/pii/S0010482525005116) |
+| T1w-MRI → CT | Brain | Raggio et al., FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis (Fu et al. architecture) | [Read more](https://www.sciencedirect.com/science/article/pii/S0010482525005116) |
+| T1w-MRI → CT | Brain | Raggio et al., FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis (Spadea, Pileggi et al. architecture)| [Read more](https://www.sciencedirect.com/science/article/pii/S0010482525005116) |
+| CBCT → CT | Head & Neck | Raggio et al., A Privacy-Preserving Federated Learning Framework for Generalizable CBCT to Synthetic CT Translation in Head and Neck | [Read more](https://arxiv.org/abs/2506.08654v1) |
+| CT → PET | Chest/Lung | Salehjahromi, Karpinets et al., Synthetic PET from CT improves diagnosis and prognosis for lung cancer: Proof of concept | [Read more](https://www.sciencedirect.com/science/article/pii/S2666379124001071) |
+
 
 ### Example (with video)
 

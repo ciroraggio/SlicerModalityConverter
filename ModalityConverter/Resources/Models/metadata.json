@@ -2,28 +2,28 @@
     "fedsynthct_lietal_t1w_brain": {
         "url": "https://github.com/ciroraggio/SlicerModalityConverter/releases/download/v1.0.0/fedsynthct_lietal_t1w_brain.onnx",
         "display_name": "[T1w MRI-to-CT] [Brain] FedSynthCT MRI-T1w Li Model",
-        "description": "This model was trained using FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation.<br><b>Input</b>: T1-weighted MRI scans.<br><b>Preprocess</b>: N4ITK Bias Field Correction, Crop/Pad/Resize.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis, Computers in Biology and Medicine, Volume 192, Part A, 2025, 110160, ISSN 0010-4825, https://doi.org/10.1016/j.compbiomed.2025.110160.</cite>",
+        "description": "This model was trained using FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation.<br><a href=\"https://www.sciencedirect.com/science/article/pii/S0010482525005116\">Read more about this model</a><br><br><b>Input</b>: T1-weighted MRI scans.<br><b>Preprocess</b>: N4ITK Bias Field Correction, Crop/Pad/Resize.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis, Computers in Biology and Medicine, Volume 192, Part A, 2025, 110160, ISSN 0010-4825, https://doi.org/10.1016/j.compbiomed.2025.110160.</cite>",
         "module_name": "FedSynthBrainLiModel",
         "mask_required": false
     },
     "fedsynthct_fuetal_t1w_brain": {
         "url": "https://github.com/ciroraggio/SlicerModalityConverter/releases/download/v1.0.0/fedsynthct_fuetal_t1w_brain.onnx",
         "display_name": "[T1w MRI-to-CT] [Brain] FedSynthCT MRI-T1w Fu Model",
-        "description": "This model was trained using FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation.<br><b>Input</b>: T1-weighted MRI scans.<br><b>Preprocess</b>: N4ITK Bias Field Correction, Crop/Pad/Resize.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis, Computers in Biology and Medicine, Volume 192, Part A, 2025, 110160, ISSN 0010-4825, https://doi.org/10.1016/j.compbiomed.2025.110160.</cite>",
+        "description": "This model was trained using FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation.<br><a href=\"https://www.sciencedirect.com/science/article/pii/S0010482525005116\">Read more about this model</a><br><br><b>Input</b>: T1-weighted MRI scans.<br><b>Preprocess</b>: N4ITK Bias Field Correction, Crop/Pad/Resize.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis, Computers in Biology and Medicine, Volume 192, Part A, 2025, 110160, ISSN 0010-4825, https://doi.org/10.1016/j.compbiomed.2025.110160.</cite>",
         "module_name": "FedSynthBrainFuModel",
         "mask_required": false
     },
     "fedsynthct_spadeaetal_t1w_brain": {
         "url": "https://github.com/ciroraggio/SlicerModalityConverter/releases/download/v1.0.0/fedsynthct_spadeaetal_t1w_brain.onnx",
         "display_name": "[T1w MRI-to-CT] [Brain] FedSynthCT MRI-T1w Spadea Model",
-        "description": "This model was trained using FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation.<br><b>Input</b>: T1-weighted MRI scans.<br><b>Preprocess</b>: N4ITK Bias Field Correction, Crop/Pad/Resize.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis, Computers in Biology and Medicine, Volume 192, Part A, 2025, 110160, ISSN 0010-4825, https://doi.org/10.1016/j.compbiomed.2025.110160.</cite>",
+        "description": "This model was trained using FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation.<br><a href=\"https://www.sciencedirect.com/science/article/pii/S0010482525005116\">Read more about this model</a><br><br><b>Input</b>: T1-weighted MRI scans.<br><b>Preprocess</b>: N4ITK Bias Field Correction, Crop/Pad/Resize.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis, Computers in Biology and Medicine, Volume 192, Part A, 2025, 110160, ISSN 0010-4825, https://doi.org/10.1016/j.compbiomed.2025.110160.</cite>",
         "module_name": "FedSynthBrainSpadeaModel",
         "mask_required": false
     },
     "fedsynthct_pix2pix_cbct_headneck": {
         "url": "https://github.com/ciroraggio/SlicerModalityConverter/releases/download/v1.2.0/fedsynthct_pix2pix_cbct_headneck.onnx",
         "display_name": "[CBCT-to-CT] [Head and Neck] FedSynthCT CBCT-Pix2Pix Model",
-        "description": "This model was trained using the FedSynthCT framework, a federated learning framework for image to image translation.<br><b>Input</b>: CBCT scans.<br><b>Preprocess</b>: Crop/Pad/Resize/Clipping.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, A Privacy-Preserving Federated Learning Framework for Generalizable CBCT to Synthetic CT Translation in Head and Neck, arXiv:2506.08654, 2025, https://doi.org/10.48550/arXiv.2506.08654.</cite>",
+        "description": "This model was trained using the FedSynthCT framework, a federated learning framework for image to image translation.<br><a href=\"https://arxiv.org/abs/2506.08654v1\">Read more about this model</a><br><br><b>Input</b>: CBCT scans.<br><b>Preprocess</b>: Crop/Pad/Resize/Clipping.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, A Privacy-Preserving Federated Learning Framework for Generalizable CBCT to Synthetic CT Translation in Head and Neck, arXiv:2506.08654, 2025, https://doi.org/10.48550/arXiv.2506.08654.</cite>",
         "module_name": "FedSynthCBCTPix2PixModel",
         "mask_required": true
     },
@@ -34,5 +34,12 @@
     "module_name": "Unet2PixT1T2Model",
     "mask_required": false,
     "deprecated": true
+  },
+  "ct2pet_mori": {
+      "url": "https://github.com/WuLabMDA/Synthetic-PET-from-CT/releases/download/v0.1.0/ct2pet_mori.onnx",
+      "display_name": "[CT-to-PET] [Chest/Lung] CT-to-PET Mori cGAN Model",
+      "description": "A cGAN model (Pix2Pix and ResUNet++ hybrid) based on multi-center PET and CT scans. The model was trained on the MDA-TRAIN cohort and locked for external testing on the MDA-TEST and TCIA-STANFORD cohorts with a head-to-head comparison with acquired PET as ground truth. <br><b><i>Important Disclaimer:</i></b> This model is intended for research purposes only.<br>The synthetic PET outputs produced by this model are approximations and must not be used for clinical diagnosis, treatment planning, or decision-making.<br><a href=\"https://www.sciencedirect.com/science/article/pii/S2666379124001071\">Read more about this model</a><br><br><b>Input</b>: CT scans.<br><b>Output</b>: Synthetic PET volume (SUV up to 7).<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>M. Salehjahromi, T. V. Karpinets et al., Synthetic PET from CT improves diagnosis and prognosis for lung cancer: Proof of concept, Cell Reports Medicine, Volume 5, Issue 3, 2024, https://doi.org/10.1016/j.xcrm.2024.101463.</cite>",
+      "module_name": "CT2PETMoriModel",
+      "mask_required": false
   }
 }

@@ -11,6 +11,7 @@ set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainSpadeaModel.py
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthCBCTPix2PixModel.py
   ${MODULE_NAME}Lib/ModelsImpl/Unet2PixT1T2Model.py
+  ${MODULE_NAME}Lib/ModelsImpl/CT2PETMoriModel.py
   ${MODULE_NAME}Lib/UI/HelpDialog.py
   ${MODULE_NAME}Lib/UI/utils.py
   ${MODULE_NAME}Lib/Utils/customTransformsUtils.py
