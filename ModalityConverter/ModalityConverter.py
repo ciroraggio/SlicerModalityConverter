@@ -348,22 +348,28 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
 
     def onApplyButton(self) -> None:
         """Run processing when user clicks "Apply" button."""
-        with slicer.util.tryWithErrorDisplay(_("Failed to compute results."), waitCursor=True):
-            self.setMainButtonsState(False)
-            slicer.util.setPythonConsoleVisible(True)
-            slicer.util.resetSliceViews()
-            self.updateInfoLabel("Processing, please wait...")
+        self.setMainButtonsState(False)
+        self.updateInfoLabel("Processing, please wait...")
+        slicer.util.setPythonConsoleVisible(True)
+        slicer.util.resetSliceViews()
 
-            self.logic.process(inputVolume=self.ui.inputSelector.currentNode(),
-                               outputVolume=self.ui.outputSelector.currentNode(),
-                               maskVolume=self.ui.maskSelector.currentNode(),
-                               showAllFiles=self.ui.showAllFilesCheckBox.isChecked(),
-                               selectedModelKey=self.selectedModelKey,
-                               selectedModelModuleName=self.selectedModelModuleName,
-                               device=self.selectedDeviceKey)
-            
-            self.updateInfoLabel("Processing completed successfully.")
+        try:
+            self.logic.process(
+                inputVolume=self.ui.inputSelector.currentNode(),
+                outputVolume=self.ui.outputSelector.currentNode(),
+                maskVolume=self.ui.maskSelector.currentNode(),
+                showAllFiles=self.ui.showAllFilesCheckBox.isChecked(),
+                selectedModelKey=self.selectedModelKey,
+                selectedModelModuleName=self.selectedModelModuleName,
+                device=self.selectedDeviceKey
+            )
+        except Exception as e:
+            slicer.util.errorDisplay(f"Processing failed: {e}")
+            logging.exception("Processing failed")
+        finally:
+            self.updateInfoLabel("Processing completed.")
             self.setMainButtonsState(True)
+
 #
 # ModalityConverterLogic
 #

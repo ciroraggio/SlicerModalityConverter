@@ -28,7 +28,7 @@
 
 ***SlicerModalityConverter*** is an open-source 3D Slicer extension designed for medical image-to-image (I2I) translation.
 
-The ModalityConverter module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT), providing a user-friendly interface.
+The ModalityConverter module integrates multiple deep learning models trained for different kind of I2I translation (MRI-to-CT, CBCT-to-CT, CT-to-PET), providing a user-friendly interface.
 
 ## Installation
 
