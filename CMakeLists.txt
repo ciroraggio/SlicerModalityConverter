@@ -20,6 +20,7 @@ include(${Slicer_USE_FILE})
 #-----------------------------------------------------------------------------
 # Extension modules
 add_subdirectory(ModalityConverter)
+add_subdirectory(SyntheticImageQualityAssurance)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------
