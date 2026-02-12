@@ -5,7 +5,7 @@ set(MODULE_NAME SyntheticImageQualityAssurance)
 set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}.py
   ${MODULE_NAME}Lib/ModelBase.py
-  ${MODULE_NAME}Lib/ModelsImpl/MAESliceQAModel.py
+  ${MODULE_NAME}Lib/ModelsImpl/MAESlicesCTQAModel.py
   ${MODULE_NAME}Lib/UI/HelpDialog.py
   ${MODULE_NAME}Lib/UI/utils.py
   ${MODULE_NAME}Lib/Utils/customTransformsUtils.py

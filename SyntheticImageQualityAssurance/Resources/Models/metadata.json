@@ -1,9 +1,9 @@
 {
-    "MAESlicesCTQA": {
-        "url": "https://github.com/ciroraggio/SlicerModalityConverter/releases/download/v1.0.0/fedsynthct_lietal_t1w_brain.onnx",
-        "display_name": "[T1w MRI-to-CT] [Brain] FedSynthCT MRI-T1w Li Model",
-        "description": "This model was trained using FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation.<br><a href=\"https://www.sciencedirect.com/science/article/pii/S0010482525005116\">Read more about this model</a><br><br><b>Input</b>: T1-weighted MRI scans.<br><b>Preprocess</b>: N4ITK Bias Field Correction, Crop/Pad/Resize.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis, Computers in Biology and Medicine, Volume 192, Part A, 2025, 110160, ISSN 0010-4825, https://doi.org/10.1016/j.compbiomed.2025.110160.</cite>",
+    "MAE_slice_sCT_QA": {
+        "url": "https://github.com/pzaffino/SlicerModalityConverter/releases/download/v1.4.0/MAESlicesCTQAModel_EMBEDDED.onnx",
+        "display_name": "[T1w MRI-to-CT MAE prediction] [Brain] FedSynthCT MRI-T1w 2D MAE prediction",
+        "description": "This module allows to predict the conversion error of a synthetic CT.The prediction value is referred to each axial slice. The model was trained using data from FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation.<br><a href=\"https://www.sciencedirect.com/science/article/pii/S0010482525005116\">",
         "module_name": "MAESlicesCTQAModel",
-        "mask_required": false
+        "mask_required": true
     }
 }

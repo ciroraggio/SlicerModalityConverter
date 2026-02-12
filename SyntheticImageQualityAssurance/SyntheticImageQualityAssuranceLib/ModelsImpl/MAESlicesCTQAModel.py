@@ -5,7 +5,7 @@ from ModalityConverterLib.Utils.modelLoadUtils import import_onnx_model
 from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
 
 
-@register_model("MAESlicesCTQA")
+@register_model("MAE_slice_sCT_QA")
 class MAESlicesCTQAModel(BaseModel):
     """Model class for CT to PET inference"""
 
@@ -18,6 +18,7 @@ class MAESlicesCTQAModel(BaseModel):
             device (str): Device to run inference on ('cpu' or 'cuda')
         """
         super().__init__(modelKey, device)
+        print("Hello!")
 
 
     def _loadModelFromPath(self, modelPath):
@@ -60,6 +61,7 @@ class MAESlicesCTQAModel(BaseModel):
         showAllFiles: bool = True,
     ):
         from numpy import concatenate, repeat, zeros, transpose, float32
+        print("HELLO!!!!")
 
         if not isinstance(inputVolume, slicer.vtkMRMLScalarVolumeNode):
             raise TypeError("Input must be a vtkMRMLScalarVolumeNode")

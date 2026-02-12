@@ -23,12 +23,12 @@ class BaseModel(ABC):
         self.baseModelsDir = os.path.join(os.path.dirname(__file__), '../Resources/Models')
         self.modelsDir = os.path.abspath(self.baseModelsDir)
         self.device = device.lower()
-        
+
     def loadModel(self):
         import json
         import requests
         from urllib.parse import urlparse
-        
+
         modelMetadataPath = os.path.join(self.modelsDir, "metadata.json")
 
         # Ensure the models directory exists
@@ -44,7 +44,7 @@ class BaseModel(ABC):
             self.modelPath = None  # No files found with the specified key
 
         # Download model if not present locally
-        if self.modelPath is None or not os.path.exists(self.modelPath):            
+        if self.modelPath is None or not os.path.exists(self.modelPath):
             # Load model metadata
             if not os.path.exists(modelMetadataPath):
                 raise FileNotFoundError(f"Model metadata file not found at {modelMetadataPath}")
@@ -54,16 +54,16 @@ class BaseModel(ABC):
 
             if self.modelKey not in modelMetadata:
                 raise ValueError(f"Model key '{self.modelKey}' not found in metadata file.")
-            
+
             print(f"{PRINT_MODULE_SUFFIX} Model '{self.modelKey}' not found locally. Downloading...")
             slicer.app.processEvents()
             url = modelMetadata[self.modelKey]["url"]
-            
+
             _, ext = os.path.splitext(urlparse(url).path)
-            
+
             # Use the metadata key as a filename, keeping the original extension
             self.modelPath = os.path.join(self.modelsDir, self.modelKey + ext)
-            
+
             response = requests.get(url, stream=True)
             response.raise_for_status()
 
