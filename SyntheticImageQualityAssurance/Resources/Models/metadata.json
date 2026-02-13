@@ -1,8 +1,8 @@
 {
-    "MAE_slice_sCT_QA": {
+    "mae_slice_sct_qa": {
         "url": "https://github.com/pzaffino/SlicerModalityConverter/releases/download/v1.4.0/MAESlicesCTQAModel_EMBEDDED.onnx",
         "display_name": "[T1w MRI-to-CT MAE prediction] [Brain] FedSynthCT MRI-T1w 2D MAE prediction",
-        "description": "This module allows to predict the conversion error of a synthetic CT.The prediction value is referred to each axial slice. The model was trained using data from FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation.<br><a href=\"https://www.sciencedirect.com/science/article/pii/S0010482525005116\">",
+        "description": "This module predicts the conversion error of a synthetic CT on a per-slice basis. The model was trained using data from FedSynthCT-Brain, a federated learning framework for brain MRI-to-CT translation. Please note that the predicted MAE values are clipped at 135. The underlying algorithm is detailed in the article 'Zaffino P, Raggio CB, Thummerer A, Marmitt GG, Langendijk JA, Procopio A, Cosentino C, Seco J, Knopf AC, Both S, Spadea MF. Toward closing the loop in image-to-image conversion in radiotherapy: A quality control tool to predict synthetic computed tomography hounsfield unit accuracy. Journal of imaging. 2024 Dec 10;10(12):316'. If you use this module, please cite it.",
         "module_name": "MAESlicesCTQAModel",
         "mask_required": true
     }
