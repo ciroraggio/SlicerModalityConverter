@@ -28,7 +28,7 @@ class SyntheticImageQualityAssurance(ScriptedLoadableModule):
         from SyntheticImageQualityAssuranceLib.UI.utils import HELP_TEXT, CONTRIBUTORS
         ScriptedLoadableModule.__init__(self, parent)
 
-        self.parent.title = _("SyntheticImageQualityAssurance")
+        self.parent.title = _("Synthetic Image Quality Assurance")
         self.parent.categories = [translate("qSlicerAbstractCoreModule", "Image Synthesis")]
         self.parent.dependencies = []
         self.parent.contributors = CONTRIBUTORS

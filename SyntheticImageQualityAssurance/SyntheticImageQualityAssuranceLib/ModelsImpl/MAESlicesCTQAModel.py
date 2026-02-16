@@ -51,7 +51,7 @@ class MAESlicesCTQAModel(BaseModel):
         print(f"{PRINT_MODULE_SUFFIX} Running inference...")
         slicer.app.processEvents()
 
-        # Get sct e mask array
+        # Get sct and mask array
         sct = slicer.util.arrayFromVolume(inputVolume)
         mask = slicer.util.arrayFromVolume(inputMask)
         mae_prediction = np.zeros_like(sct)
