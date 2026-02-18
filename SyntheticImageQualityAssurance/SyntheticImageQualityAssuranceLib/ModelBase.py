@@ -29,7 +29,7 @@ class BaseModel(ABC):
         import requests
         from urllib.parse import urlparse
 
-        modelMetadataPath = os.path.join(self.modelsDir, "metadata.json")
+        modelMetadataPath = os.path.join(self.modelsDir, "metadata_sqa.json")
 
         # Ensure the models directory exists
         if not os.path.exists(self.modelsDir):
