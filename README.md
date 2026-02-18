@@ -124,7 +124,7 @@ class YourModelClass(BaseModel):
         pass
 ```
 
-- The `@register_model("your_unique_model_key")` decorator is **mandatory** and must match the key used in `model_metadata.json`.
+- The `@register_model("your_unique_model_key")` decorator is **mandatory** and must match the key used in `metadata.json`.
 - Implement `_loadModelFromPath(modelPath)` to define how your model is loaded (e.g. `torch.load`, `onnxruntime`, etc.).
 - Implement `runInference(...)` to define how the model performs inference and writes results to the `outputVolume`.
 
@@ -139,7 +139,7 @@ For a full example, see the classes `FedSynthBrainBaseModel` and `FedSynthBrainL
 Open the file:
 
 ```
-.../ModalityConverter/ModalityConverter/Resources/Models/model_metadata.json
+.../ModalityConverter/ModalityConverter/Resources/Models/metadata.json
 ```
 
 Add a new entry in the following format:
@@ -240,7 +240,7 @@ Here is a basic example to get started:
 | Class location      | `ModalityConverterLib/ModelsImpl/`                                                 |
 | Required methods    | `_loadModelFromPath(...)`, `runInference(...)`                                   |
 | Model key decorator | `@register_model("your_model_key")`                                              |
-| Metadata file       | Add an entry to `model_metadata.json`                                            |
+| Metadata file       | Add an entry to `metadata.json`                                            |
 | Model file naming   | Must start with the same `your_model_key` used in the decorator and JSON         |
 | Download support    | Model file is auto-downloaded from the provided URL if it is not present locally |
 

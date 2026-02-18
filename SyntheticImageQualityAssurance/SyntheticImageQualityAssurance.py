@@ -99,7 +99,7 @@ class SyntheticImageQualityAssuranceWidget(ScriptedLoadableModuleWidget, VTKObse
 
         """Populate the model dropdown dynamically based on metadata.json."""
         modelsDir = os.path.join(os.path.dirname(__file__), "Resources/Models")
-        modelsMetadataPath = os.path.join(modelsDir, "metadata.json")
+        modelsMetadataPath = os.path.join(modelsDir, "metadata_sqa.json")
 
         if not os.path.exists(modelsMetadataPath):
             slicer.util.errorDisplay("Model metadata file not found.")
