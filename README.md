@@ -256,6 +256,14 @@ Here is a basic example to get started:
 
 ## Synthetic Image Quality Assessment
 
+Once a synthetic image is generated, its accuracy can be assessed even in the absence of a ground truth image.
+This module enables such evaluation.
+
+<p align="center">
+  <img src="https://mdpi-res.com/jimaging/jimaging-10-00316/article_deploy/html/images/jimaging-10-00316-g003.png" width="80%" />
+  <br>
+  <sub>Example of 2D MAE prediction for a synthetic CT. Source: <a href="https://www.mdpi.com/2313-433X/10/12/316">Zaffino et al</a></sub>
+</p>
 
 ### Available Models
 
