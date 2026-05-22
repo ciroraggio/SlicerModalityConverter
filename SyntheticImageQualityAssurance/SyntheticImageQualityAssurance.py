@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from typing import Optional
 
 import vtk
@@ -145,12 +146,19 @@ class SyntheticImageQualityAssuranceWidget(ScriptedLoadableModuleWidget, VTKObse
 
     def populateDeviceDropdown(self):
         if self.dependenciesInstalled:
-            from torch.cuda import is_available as cuda_available, device_count, get_device_name
-            if cuda_available():
-                for i in range(device_count()):
-                    deviceName = get_device_name(i)
-                    self.ui.deviceList.addItem(f"gpu {i} - {deviceName}", {"key": f"cuda:{i}"})
-
+            if not sys.platform.startswith('darwin'):
+                from torch.cuda import is_available as cuda_available, device_count, get_device_name
+                if cuda_available():
+                    for i in range(device_count()):
+                        deviceName = get_device_name(i)
+                        self.ui.deviceList.addItem(f"gpu {i} - {deviceName}", {"key": f"cuda:{i}"})
+            else:
+                from onnxruntime import get_available_providers
+                available_providers = get_available_providers()
+                
+                if "CoreMLExecutionProvider" in available_providers:
+                    self.ui.deviceList.addItem("coreml (Apple GPU/NPU)", {"key": "coreml"})
+                    
     def onDeviceSelected(self, index):
         """Handle device selection."""
         selected_data = self.ui.deviceList.itemData(index)
@@ -189,7 +197,10 @@ class SyntheticImageQualityAssuranceWidget(ScriptedLoadableModuleWidget, VTKObse
                 print(f"{PRINT_MODULE_SUFFIX} Installing {dep}...")
                 slicer.util.pip_install(dep) if dep != "monai" else slicer.util.pip_install("monai[itk]")
 
-            slicer.util.pip_install("onnxruntime-gpu")
+            if not sys.platform.startswith('darwin'):
+                # no need to install anything additional on macOS because onnxruntime already includes the CoreMLExecutionProvider in the standard package
+                slicer.util.pip_install("onnxruntime-gpu")
+            
 
             print(f"{PRINT_MODULE_SUFFIX} All dependencies installed successfully.")
             slicer.app.restart()
