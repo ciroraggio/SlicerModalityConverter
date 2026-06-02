@@ -1,14 +1,21 @@
+<div align="center">
+  
 # SlicerModalityConverter
-[![3D Slicer](https://img.shields.io/badge/3D_Slicer_-_5.8_Compatible-blu?style=plastic&color=blue)](https://download.slicer.org/)
-[![3D Slicer](https://img.shields.io/badge/3D_Slicer_-_5.10_Compatible-blue?style=plastic&color=B7E1E1)](https://download.slicer.org/)
-[![3D Slicer Extension Index](https://img.shields.io/badge/3D_Slicer-Extension_Index-blue?style=plastic&color=9980BA)](https://extensions.slicer.org/catalog)
-[![License](https://img.shields.io/badge/License-Apache_2.0-purple?style=plastic&color=purple)](LICENSE)
-[![Model License](https://img.shields.io/badge/Models_License-AI_Pubs_research_use_Rail_M-purple?style=plastic&color=purple)](MODEL_LICENSE)
-![Image_Synthesis](https://img.shields.io/badge/Medical-Image_Synthesis-white?style=plastic&color=ed7d3a)
-![MedicalAI](https://img.shields.io/badge/Medical-Artificial_Intelligence-white?style=plastic&color=8cd867)
-![MedicalI2I](https://img.shields.io/badge/Medical-Image_To_Image_Tranlastion-white?style=plastic&color=2fbf71)
+<br>
 
-<center><img src="ModalityConverter.png" alt="drawing" style="width:700px;"/></center>
+<img src="ModalityConverter.png" alt="drawing" style="width:700px;"/>
+
+[![3D Slicer](https://img.shields.io/badge/3D_Slicer_-_5.8%20%7C%205.10_Compatible-blue?style=for-the-badge)](https://download.slicer.org/)
+[![3D Slicer Extension Index](https://img.shields.io/badge/3D_Slicer-Extension_Index-9980BA?style=for-the-badge)](https://extensions.slicer.org/catalog)
+
+[![License](https://img.shields.io/badge/License-Apache_2.0-purple?style=for-the-badge)](LICENSE)
+[![Model License](https://img.shields.io/badge/Models_License-AI_Pubs_research_use_Rail_M-purple?style=for-the-badge)](MODEL_LICENSE)
+
+![Image_Synthesis](https://img.shields.io/badge/Medical-Image_Synthesis-ed7d3a?style=for-the-badge)
+![MedicalAI](https://img.shields.io/badge/Medical-Artificial_Intelligence-8cd867?style=for-the-badge)
+![MedicalI2I](https://img.shields.io/badge/Medical-Image_To_Image_Tranlastion-2fbf71?style=for-the-badge)
+
+</div>
 
 ---
 
