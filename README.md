@@ -77,7 +77,7 @@ This extension is intended for **research purposes only**. If a model is applied
 | T1w-MRI → CT | Brain | Raggio et al., FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis (Li et al. architecture) | [Read more](https://www.sciencedirect.com/science/article/pii/S0010482525005116) |
 | T1w-MRI → CT | Brain | Raggio et al., FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis (Fu et al. architecture) | [Read more](https://www.sciencedirect.com/science/article/pii/S0010482525005116) |
 | T1w-MRI → CT | Brain | Raggio et al., FedSynthCT-Brain: A federated learning framework for multi-institutional brain MRI-to-CT synthesis (Spadea, Pileggi et al. architecture)| [Read more](https://www.sciencedirect.com/science/article/pii/S0010482525005116) |
-| CBCT → CT | Head & Neck | Raggio et al., A Privacy-Preserving Federated Learning Framework for Generalizable CBCT to Synthetic CT Translation in Head and Neck | [Read more](https://arxiv.org/abs/2506.08654v1) |
+| CBCT → CT | Head & Neck | Raggio et al., A Privacy-Preserving Federated Learning Framework for Generalizable CBCT to Synthetic CT Translation in Head and Neck | [Read more](https://doi.org/10.3389/fdgth.2026.1812254) |
 | CT → PET | Chest/Lung | Salehjahromi, Karpinets et al., Synthetic PET from CT improves diagnosis and prognosis for lung cancer: Proof of concept | [Read more](https://www.sciencedirect.com/science/article/pii/S2666379124001071) |
 
 
