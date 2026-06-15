@@ -23,7 +23,7 @@
     "fedsynthct_pix2pix_cbct_headneck": {
         "url": "https://github.com/ciroraggio/SlicerModalityConverter/releases/download/models/fedsynthct_pix2pix_cbct_headneck.onnx",
         "display_name": "[CBCT-to-CT] [Head and Neck] FedSynthCT CBCT-Pix2Pix Model",
-        "description": "This model was trained using the FedSynthCT framework, a federated learning framework for image to image translation.<br><a href=\"https://doi.org/10.3389/fdgth.2026.1812254\">Read more about this model</a><br><br><b>Input</b>: CBCT scans.<br><b>Preprocess</b>: Crop/Pad/Resize/Clipping.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, A Privacy-Preserving Federated Learning Framework for Generalizable CBCT to Synthetic CT Translation in Head and Neck, Frontiers in Digital Health 8:1812254, 2025, doi: 10.3389/fdgth.2026.1812254.</cite>",
+        "description": "This model was trained using the FedSynthCT framework, a federated learning framework for image to image translation.<br><a href=\"https://doi.org/10.3389/fdgth.2026.1812254\">Read more about this model</a><br><br><b>Input</b>: CBCT scans.<br><b>Preprocess</b>: Crop/Pad/Resize/Clipping.<br><b>Output</b>: Synthetic CT volume [256x256x256].<br><b>How to cite:</b><br>If you use this model, please cite:<br><cite>C.B. Raggio et al, A Privacy-Preserving Federated Learning Framework for Generalizable CBCT to Synthetic CT Translation in Head and Neck, Frontiers in Digital Health 8:1812254, 2026, doi: 10.3389/fdgth.2026.1812254.</cite>",
         "module_name": "FedSynthCBCTPix2PixModel",
         "mask_required": true
     },
