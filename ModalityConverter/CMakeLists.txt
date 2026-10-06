@@ -5,6 +5,8 @@ set(MODULE_NAME ModalityConverter)
 set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}.py
   ${MODULE_NAME}Lib/ModelBase.py
+  ${MODULE_NAME}Lib/InferenceProcessManager.py
+  ${MODULE_NAME}Lib/inference_worker.py
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainBaseModel.py
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainFuModel.py
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainLiModel.py

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import os
-import slicer
 from slicer import vtkMRMLScalarVolumeNode
 from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
 
@@ -20,28 +19,38 @@ class BaseModel(ABC):
     def __init__(self, modelKey: str, device: str = "cpu"):
         self.modelKey = modelKey
         self.model = None
-        self.baseModelsDir = os.path.join(os.path.dirname(__file__), '../Resources/Models')
-        self.modelsDir = os.path.abspath(self.baseModelsDir)
+        self.baseModelsDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../Resources/Models'))
+        self.modelsDir = os.path.abspath(os.environ.get('MODALITY_CONVERTER_MODEL_DIR', self.baseModelsDir))
         self.device = device.lower()
+        self.progressCallback = None
+
+    def reportProgress(self, percent, message):
+        if self.progressCallback:
+            self.progressCallback(percent, message)
         
     def loadModel(self):
         import json
         import requests
         from urllib.parse import urlparse
         
-        modelMetadataPath = os.path.join(self.modelsDir, "metadata.json")
+        modelMetadataPath = os.path.join(self.baseModelsDir, "metadata.json")
 
         # Ensure the models directory exists
         if not os.path.exists(self.modelsDir):
             os.makedirs(self.modelsDir)
 
-        # Search the key file by unique key
-        for file in os.listdir(self.modelsDir):
-            if file.startswith(self.modelKey):
-                self.modelPath = os.path.join(self.modelsDir, file)
+        # Prefer the writable user cache, then accept model files bundled locally.
+        self.modelPath = None
+        for directory in (self.modelsDir, self.baseModelsDir):
+            if not os.path.isdir(directory):
+                continue
+            for file in os.listdir(directory):
+                candidate = os.path.join(directory, file)
+                if file.startswith(self.modelKey) and os.path.isfile(candidate):
+                    self.modelPath = candidate
+                    break
+            if self.modelPath:
                 break
-        else:
-            self.modelPath = None  # No files found with the specified key
 
         # Download model if not present locally
         if self.modelPath is None or not os.path.exists(self.modelPath):            
@@ -56,7 +65,6 @@ class BaseModel(ABC):
                 raise ValueError(f"Model key '{self.modelKey}' not found in metadata file.")
             
             print(f"{PRINT_MODULE_SUFFIX} Model '{self.modelKey}' not found locally. Downloading...")
-            slicer.app.processEvents()
             url = modelMetadata[self.modelKey]["url"]
             
             _, ext = os.path.splitext(urlparse(url).path)
@@ -64,11 +72,12 @@ class BaseModel(ABC):
             # Use the metadata key as a filename, keeping the original extension
             self.modelPath = os.path.join(self.modelsDir, self.modelKey + ext)
             
+            os.makedirs(self.modelsDir, exist_ok=True)
             response = requests.get(url, stream=True)
             response.raise_for_status()
 
             with open(self.modelPath, "wb") as modelFile:
-                for chunk in response.iter_content(chunk_size=8192): # Download in chunks of 8KB
+                for chunk in response.iter_content(chunk_size=1024 * 1024): # Download in chunks of 8KB
                     modelFile.write(chunk)
 
         # Load the model with custom subclasses method

@@ -64,24 +64,32 @@ class FedSynthBrainBaseModel(BaseModel):
             
             maskVolume = inputMask
             
-        print(f"{PRINT_MODULE_SUFFIX} Applying N4ITK Bias Field Correction...")
-        slicer.app.processEvents()
-        correctedInputVolume = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScalarVolumeNode", "PreprocessedInputVolume")
+        if getattr(inputVolume, "modalityConverterBiasCorrected", False):
+            # The Slicer process already ran its native N4 CLI asynchronously.
+            inputNp = slicer.util.arrayFromVolume(inputVolume)
+            correctedInputVolume = slicer.mrmlScene.AddNewNodeByClass(
+                "vtkMRMLScalarVolumeNode", "PreprocessedInputVolume")
+            slicer.util.updateVolumeFromArray(correctedInputVolume, inputNp)
+        else:
+            print(f"{PRINT_MODULE_SUFFIX} Applying N4ITK Bias Field Correction...")
+            slicer.app.processEvents()
+            correctedInputVolume = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScalarVolumeNode", "PreprocessedInputVolume")
 
-        n4Params = {
-            "inputImageName": inputVolume.GetID(),
-            "maskImageName": maskVolume.GetID(),
-            "outputImageName": correctedInputVolume.GetID(),
-            "shrinkFactor": 2,         # default is 4, lower value = slower but better
-            "numberOfIterations": [50, 40, 30],  # Multi-resolution levels
-            "convergenceThreshold": 0.00001,
-            "bsplineOrder": 3,
-        }
+            n4Params = {
+                "inputImageName": inputVolume.GetID(),
+                "maskImageName": maskVolume.GetID(),
+                "outputImageName": correctedInputVolume.GetID(),
+                "shrinkFactor": 2,         # default is 4, lower value = slower but better
+                "numberOfIterations": [50, 40, 30],  # Multi-resolution levels
+                "convergenceThreshold": 0.00001,
+                "bsplineOrder": 3,
+            }
 
-        cliN4Node = slicer.cli.run(slicer.modules.n4itkbiasfieldcorrection, None, n4Params, wait_for_completion=True)
-        slicer.mrmlScene.RemoveNode(cliN4Node)
+            cliN4Node = slicer.cli.run(slicer.modules.n4itkbiasfieldcorrection, None, n4Params, wait_for_completion=True)
+            slicer.mrmlScene.RemoveNode(cliN4Node)
 
-        inputNp = slicer.util.arrayFromVolume(correctedInputVolume)
+            inputNp = slicer.util.arrayFromVolume(correctedInputVolume)
+            maskNp = slicer.util.arrayFromVolume(maskVolume)
         maskNp = slicer.util.arrayFromVolume(maskVolume)
         
         if maskNp.min() < 0 or maskNp.max() > 1:
@@ -140,8 +148,13 @@ class FedSynthBrainBaseModel(BaseModel):
             (1, 1, preprocessedInput.shape[2], preprocessedInput.shape[3]), device=self.device
         )
 
+        totalSlices = len(sCT) * preprocessedInput.shape[1]
+        completedSlices = 0
         for view in sCT:
             for sliceIndex in range(preprocessedInput.shape[1]):
+                completedSlices += 1
+                if completedSlices % max(1, totalSlices // 20) == 0:
+                    self.reportProgress(round(completedSlices * 100 / totalSlices), "Running inference")
                 if view == "first_plane":
                     inputSlice = preprocessedInput[0, sliceIndex, :, :]
                     maskSlice = preprocessedMask[0, sliceIndex, :, :]
