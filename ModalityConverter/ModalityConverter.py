@@ -74,7 +74,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.selectedModelModuleName = None
         self.maskRequiredForSelectedModel = False
         self.selectedDeviceKey = None
-        self.requiredDeps = ["monai", "onnx", "onnxruntime", "torch", "nibabel", "SimpleITK"]
+        self.requiredDeps = ["monai", "onnx", "onnxruntime", "torch", "nibabel", "SimpleITK", "requests_toolbelt"]
         self.dependenciesInstalled = False
         self.inferenceProcessManager = None
         self.currentRunToken = None
@@ -86,6 +86,11 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self._runGuiBusy = False
         self._resourceTimer = None
         self._cpuSample = None
+        self.remoteServerUrl = None
+        self.remoteToken = None
+        self.remoteResources = None
+        self.remoteSites = self._loadRemoteSiteProfiles()
+        self.activeRemoteSite = None
 
     def checkDependencies(self):
         from importlib.util import find_spec
@@ -162,7 +167,9 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
 
     def initDeviceDropdown(self):
         self.ui.deviceList.addItem("cpu [slow]", {"key": "cpu"})
-        self.ui.deviceList.currentIndexChanged.connect(self.onDeviceSelected)
+        if not getattr(self, "_deviceSignalConnected", False):
+            self.ui.deviceList.currentIndexChanged.connect(self.onDeviceSelected)
+            self._deviceSignalConnected = True
         self.ui.deviceList.setCurrentIndex(0)
         # Force trigger selection for the first item
         self.onDeviceSelected(0)
@@ -272,9 +279,31 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.layout.addWidget(self.progressBar)
 
         advancedLayout = self.ui.advancedCollapsibleButton.layout()
+        from qt import QLabel
+        from ModalityConverterLib.UI.RemoteConnectionWidget import RemoteConnectionWidget
+        self.remoteUI = RemoteConnectionWidget(self.ui.advancedCollapsibleButton)
+        self.remoteSiteSelector = self.remoteUI.siteSelector
+        self.remoteManageButton = self.remoteUI.manageButton
+        self.remoteConnectButton = self.remoteUI.connectButton
+        self.remoteStatusLabel = self.remoteUI.statusLabel
+        for site in self.remoteSites:
+            self.remoteSiteSelector.addItem(site["name"], site)
+        savedSiteName = str(slicer.app.settings().value("ModalityConverter/selectedRemoteSite", ""))
+        savedSiteIndex = self.remoteSiteSelector.findText(savedSiteName)
+        if savedSiteIndex > 0:
+            self.remoteSiteSelector.setCurrentIndex(savedSiteIndex)
+        self.remoteServerUrl = None
+        self.remoteToken = None
+        self.remoteResources = None
+        advancedLayout.addRow(self.remoteUI)
+        self.remoteConnectButton.clicked.connect(self.onRemoteConnectClicked)
+        self.remoteManageButton.clicked.connect(self.onManageRemoteSites)
+        self.remoteSiteSelector.currentIndexChanged.connect(self.onRemoteSiteSelected)
         self.resourceBars = {}
         self.resourceLabels = {}
-        from qt import QLabel
+        self.currentResourcesLabel = QLabel("Current resources")
+        self.currentResourcesLabel.setStyleSheet("font-weight: 600; margin-top: 4px;")
+        advancedLayout.addRow(self.currentResourcesLabel)
         for key, title in (("cpu", "CPU"), ("ram", "RAM"), ("gpu", "GPU")):
             label = QLabel("{} used: N/D".format(title))
             label.setStyleSheet("font-size: 10px;")
@@ -289,7 +318,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self.resourceLabels[key] = label
         self._resourceTimer = QTimer(uiWidget)
         self._resourceTimer.timeout.connect(self.updateResourceUsage)
-        self._resourceTimer.start(2000)
+        self._resourceTimer.start(5000)
         self.updateResourceUsage()
 
         # Connections
@@ -460,12 +489,22 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self.activeRunId = str(uuid.uuid4())
             self.setRunGuiBusy(True)
             if (runSpec["moduleName"] or "").startswith("FedSynthBrain"):
+                # These models call Slicer's brainsroiauto and N4 CLIs. Run those
+                # Slicer-only preprocessing steps on the client, then send the
+                # corrected array and mask to the remote inference worker.
                 self.brainCancellationRequested = False
                 self.brainPreprocessing = {"runSpec": runSpec, "generatedMask": None,
                                            "correctedInput": None, "cliNodes": [],
                                            "handledCliIds": set(), "observers": {}}
                 self.updateInfoLabel("Preparing brain mask and N4 correction...")
                 self._startBrainPreprocessing(self.activeRunId)
+            elif self.remoteServerUrl:
+                context = self.logic.prepareInference(
+                    inputVolume=runSpec["inputVolume"], outputVolume=runSpec["outputVolume"],
+                    maskVolume=runSpec["maskVolume"], showAllFiles=runSpec["showAllFiles"],
+                    selectedModelKey=runSpec["modelKey"], selectedModelModuleName=runSpec["moduleName"],
+                    device=runSpec["device"])
+                self._launchRemoteInference(context)
             else:
                 context = self.logic.prepareInference(**{
                     "inputVolume": runSpec["inputVolume"], "outputVolume": runSpec["outputVolume"],
@@ -487,7 +526,185 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         else:
             self.onApplyButton()
 
+    def _loadRemoteSiteProfiles(self):
+        import json
+        profilesPath = os.path.join(os.path.dirname(__file__), "Resources", "RemoteSites", "sites.json")
+        try:
+            with open(profilesPath, "r", encoding="utf-8") as profilesFile:
+                profiles = json.load(profilesFile)
+            if not isinstance(profiles, list):
+                raise ValueError("Remote sites file must contain a JSON array")
+            # Migrate profiles saved by older builds in QSettings when the new
+            # packaged JSON is still empty.
+            if not profiles:
+                legacyRaw = slicer.app.settings().value("ModalityConverter/remoteSites", "[]")
+                legacyProfiles = json.loads(str(legacyRaw))
+                if isinstance(legacyProfiles, list) and legacyProfiles:
+                    profiles = legacyProfiles
+            return [{"name": item.get("name", ""), "host": item.get("host", ""),
+                     "port": str(item.get("port", "8765")), "token": ""}
+                    for item in profiles if item.get("name") and item.get("host")]
+        except Exception:
+            logging.exception("Could not load saved remote site profiles from %s", profilesPath)
+            return []
+
+    def _saveRemoteSiteProfiles(self, sites):
+        import json
+        # Bearer tokens are session-only; persist only non-secret connection details.
+        profiles = [{"name": site["name"], "host": site["host"], "port": site["port"]}
+                    for site in sites]
+        profilesPath = os.path.join(os.path.dirname(__file__), "Resources", "RemoteSites", "sites.json")
+        with open(profilesPath, "w", encoding="utf-8") as profilesFile:
+            json.dump(profiles, profilesFile, indent=2, ensure_ascii=False)
+            profilesFile.write("\n")
+
+    def _disconnectRemoteSite(self, reason=None):
+        """Reset all remote UI/session state after the server stops responding."""
+        self.remoteServerUrl = self.remoteToken = self.remoteResources = None
+        self.activeRemoteSite = None
+        self.remoteUI.setConnected(False)
+        self.ui.deviceList.clear()
+        self.initDeviceDropdown()
+        self.populateDeviceDropdown()
+        message = "Remote site disconnected" if not reason else "Remote site disconnected · {}".format(reason)
+        self.remoteStatusLabel.setText("● Offline · {}".format(message))
+        self.remoteStatusLabel.setStyleSheet("color: #b36b00; font-weight: 600;")
+        self.updateResourceUsage()
+
+    def onRemoteConnectClicked(self):
+        if self.remoteServerUrl:
+            self._disconnectRemoteSite()
+            return
+        try:
+            import requests
+            site = self.remoteSiteSelector.currentData
+            if not site:
+                raise ValueError("Add and select a remote site first")
+            host = site["host"].strip().rstrip("/")
+            if not host:
+                raise ValueError("Enter the server address")
+            if "://" not in host:
+                host = "http://" + host
+            port = int(site["port"])
+            if not 1 <= port <= 65535:
+                raise ValueError("Port must be between 1 and 65535")
+            url = host if host.rsplit(":", 1)[-1].isdigit() else "{}:{}".format(host, port)
+            token = site.get("token", "").strip()
+            if not token:
+                raise ValueError("Update the bearer token for this site in Manage sites before connecting")
+            headers = {"Authorization": "Bearer " + token}
+            response = requests.get(url + "/api/v1/health", headers=headers, timeout=4)
+            response.raise_for_status()
+            health = response.json()
+            if not isinstance(health.get("models"), dict):
+                raise ValueError("Remote server returned an invalid model catalog")
+            resourcesResponse = requests.get(url + "/api/v1/resources", headers=headers, timeout=5)
+            resourcesResponse.raise_for_status()
+            self.remoteServerUrl, self.remoteToken = url, token
+            self.activeRemoteSite = site
+            self.ui.deviceList.clear()
+            self.ui.deviceList.addItem("Remote CPU", {"key": "cpu"})
+            resources = resourcesResponse.json()
+            self.remoteResources = resources
+            remoteGpuAvailable = bool(resources.get("cuda_available") and resources.get("gpus"))
+            for gpu in resources.get("gpus", []) if resources.get("cuda_available") else []:
+                self.ui.deviceList.addItem("Remote GPU {} - {}".format(gpu["index"], gpu["name"]),
+                                           {"key": "cuda:{}".format(gpu["index"])})
+            self.ui.deviceList.setCurrentIndex(1 if remoteGpuAvailable else 0)
+            if resources.get("gpus") and not resources.get("cuda_available"):
+                reason = resources.get("cuda_reason") or "CUDA runtime unavailable"
+                self.remoteStatusLabel.setText("● Online · {}; GPU unavailable, using CPU ({})".format(site["name"], reason))
+            else:
+                self.remoteStatusLabel.setText("● Online · {} · {}".format(site["name"], url))
+            self.remoteUI.setConnected(True)
+            self.remoteStatusLabel.setStyleSheet("color: #16803c; font-weight: 600;")
+            self.updateResourceUsage()
+        except Exception as exc:
+            self._disconnectRemoteSite(str(exc))
+            slicer.util.errorDisplay("Could not connect to remote server: {}".format(exc))
+
+    def onRemoteSiteSelected(self, index):
+        settings = slicer.app.settings()
+        selectedName = self.remoteSiteSelector.currentText if index >= 0 else ""
+        settings.setValue("ModalityConverter/selectedRemoteSite", "" if selectedName == "Local" else selectedName)
+        if self.remoteServerUrl:
+            self.remoteServerUrl = self.remoteToken = self.remoteResources = None
+            self.activeRemoteSite = None
+            self.remoteUI.setConnected(False)
+            self.remoteStatusLabel.setText("● Offline · Select a site and test the connection")
+            self.remoteStatusLabel.setStyleSheet("color: #b36b00; font-weight: 600;")
+            self.ui.deviceList.clear()
+            self.initDeviceDropdown()
+            self.populateDeviceDropdown()
+            self.updateResourceUsage()
+
+    def onManageRemoteSites(self):
+        from ModalityConverterLib.UI.RemoteSitesDialog import RemoteSitesDialog
+        dialog = RemoteSitesDialog(self.remoteSites, slicer.util.mainWindow())
+        if not dialog.exec_():
+            return
+        self.remoteSites = dialog.sites
+        self._saveRemoteSiteProfiles(self.remoteSites)
+        selectedName = self.remoteSiteSelector.currentText
+        self.remoteSiteSelector.blockSignals(True)
+        self.remoteSiteSelector.clear()
+        self.remoteSiteSelector.addItem("Local", None)
+        for site in self.remoteSites:
+            self.remoteSiteSelector.addItem(site["name"], site)
+        match = self.remoteSiteSelector.findText(selectedName)
+        if match <= 0 and self.remoteSites:
+            match = 1
+        self.remoteSiteSelector.setCurrentIndex(max(0, match))
+        self.remoteSiteSelector.blockSignals(False)
+        selectedProfile = self.remoteSiteSelector.currentText
+        slicer.app.settings().setValue(
+            "ModalityConverter/selectedRemoteSite", "" if selectedProfile == "Local" else selectedProfile)
+        if self.remoteServerUrl:
+            self.remoteServerUrl = self.remoteToken = self.remoteResources = None
+            self.activeRemoteSite = None
+            self.remoteUI.setConnected(False)
+        self.remoteStatusLabel.setText("● Offline · Select a site and connect")
+        self.remoteStatusLabel.setStyleSheet("color: #b36b00; font-weight: 600;")
+        self.ui.deviceList.clear()
+        self.initDeviceDropdown()
+        self.populateDeviceDropdown()
+
+    def _launchRemoteInference(self, context, inputPreprocessed=False):
+        if self._resourceTimer:
+            self._resourceTimer.setInterval(5000)
+        context["workerPath"] = os.path.join(os.path.dirname(__file__), "ModalityConverterLib", "remote_client_worker.py")
+        self.runContext = context
+        self.updateInfoLabel("Sending volume to remote server using {}...".format(context["device"]))
+        self.currentRunToken = self.inferenceProcessManager.startRemote(
+            self.logic.pythonExecutable(), context["workerPath"], context,
+            self.remoteServerUrl, self.remoteToken, inputPreprocessed=inputPreprocessed)
+
     def updateResourceUsage(self):
+        if self.remoteServerUrl and self.remoteToken:
+            try:
+                import requests
+                response = requests.get(self.remoteServerUrl + "/api/v1/resources",
+                    headers={"Authorization": "Bearer " + self.remoteToken}, timeout=10)
+                response.raise_for_status()
+                self.remoteResources = response.json()
+            except Exception as exc:
+                self._disconnectRemoteSite(str(exc))
+                return
+            else:
+                if self.activeRemoteSite:
+                    self.remoteStatusLabel.setText("● Online · {}".format(self.activeRemoteSite["name"]))
+                    self.remoteStatusLabel.setStyleSheet("color: #16803c; font-weight: 600;")
+        if self.remoteServerUrl:
+            data = self.remoteResources or {}
+            self._setResourceBar("cpu", data.get("cpu_percent"),
+                "Remote CPU used: {:.0f}%".format(data["cpu_percent"]) if data.get("cpu_percent") is not None else "Remote CPU used: N/D")
+            total, used = data.get("ram_total"), data.get("ram_used")
+            self._setResourceBar("ram", 100.0 * used / total if total else None,
+                "Remote RAM used: {:.1f} / {:.1f} GB".format(used / 1024**3, total / 1024**3) if total else "Remote RAM used: N/D")
+            gpu = next((g for g in data.get("gpus", []) if "cuda:{}".format(g["index"]) == (self.selectedDeviceKey or "")), None)
+            self._setResourceBar("gpu", gpu.get("utilization") if gpu else None,
+                "Remote GPU used: {:.1f} / {:.1f} GB".format(gpu["memory_used_mb"] / 1024, gpu["memory_total_mb"] / 1024) if gpu else "Remote GPU used: N/D")
+            return
         cpu = None
         ramUsed = None
         ramTotal = None
@@ -578,6 +795,8 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self.progressBar.setVisible(True)
             for name in ("inputSelector", "outputSelector", "maskSelector", "modelSelector", "deviceList"):
                 getattr(self.ui, name).enabled = False
+            if hasattr(self, "remoteConnectButton"):
+                self.remoteConnectButton.setEnabled(False)
 
     def _startBrainPreprocessing(self, runId):
         """Run Slicer's native brain mask and N4 CLIs asynchronously before inference."""
@@ -671,7 +890,10 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
                 selectedModelKey=spec["modelKey"],
                 selectedModelModuleName=spec["moduleName"], device=spec["device"])
             context["inputVolume"] = spec["inputVolume"]  # preserve original output geometry
-            self._launchInference(context, inputPreprocessed=True)
+            if self.remoteServerUrl:
+                self._launchRemoteInference(context, inputPreprocessed=True)
+            else:
+                self._launchInference(context, inputPreprocessed=True)
         except Exception as e:
             self._failBrainPreprocessing(runId, str(e))
 
@@ -688,7 +910,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self._restoreRunGui()
         slicer.util.errorDisplay("Brain preprocessing failed: {}".format(message))
 
-    def _cleanupBrainPreprocessing(self):
+    def _cleanupBrainPreprocessing(self, preserveVolumes=False):
         state = self.brainPreprocessing
         self.pendingCliNode = None
         if state:
@@ -696,9 +918,10 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
                 observerTag = state.get("observers", {}).get(cliNode.GetID())
                 if observerTag is not None:
                     cliNode.RemoveObserver(observerTag)
-            for node in (state.get("generatedMask"), state.get("correctedInput")):
-                if node and slicer.mrmlScene.IsNodePresent(node):
-                    slicer.mrmlScene.RemoveNode(node)
+            if not preserveVolumes:
+                for node in (state.get("generatedMask"), state.get("correctedInput")):
+                    if node and slicer.mrmlScene.IsNodePresent(node):
+                        slicer.mrmlScene.RemoveNode(node)
             for cliNode in state.get("cliNodes", []):
                 if cliNode and slicer.mrmlScene.IsNodePresent(cliNode):
                     slicer.mrmlScene.RemoveNode(cliNode)
@@ -732,6 +955,9 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     def onInferenceProgress(self, percent, message):
         if not self.currentRunToken:
             return
+        if self._resourceTimer and self.remoteServerUrl:
+            uploadingVolume = "uploading volume" in (message or "").lower()
+            self._resourceTimer.setInterval(10000 if uploadingVolume else 5000)
         self.progressBar.setValue(percent)
         self.updateInfoLabel(message or "Inference running ({:d}%)".format(percent))
 
@@ -746,6 +972,11 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             outputVolume = self.runContext["outputVolume"]
             slicer.util.updateVolumeFromArray(outputVolume, output)
             outputVolume.CopyOrientation(self.runContext["inputVolume"])
+            if self.runContext.get("moduleName") == "CT2PETMoriModel":
+                displayNode = outputVolume.GetDisplayNode()
+                if displayNode:
+                    displayNode.SetAndObserveColorNodeID("vtkMRMLColorTableNodePET-Rainbow2")
+                    displayNode.AutoWindowLevelOn()
             previewNodes = {}
             if self.runContext["showAllFiles"]:
                 previewDir = os.path.join(self.runContext["workDir"], "previews")
@@ -767,7 +998,8 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             slicer.util.errorDisplay("Inference finished, but its output could not be loaded: {}".format(e))
             logging.exception("Failed to load inference output")
         finally:
-            self._finishRun(token)
+            preservePreviews = bool(exitCode == 0 and self.runContext and self.runContext.get("showAllFiles"))
+            self._finishRun(token, preservePreviews=preservePreviews)
 
     def onInferenceFailed(self, token, message):
         if token != self.currentRunToken:
@@ -783,18 +1015,20 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.updateInfoLabel("Inference cancelled.")
         self._finishRun(token)
 
-    def _finishRun(self, token):
+    def _finishRun(self, token, preservePreviews=False):
         if token != self.currentRunToken:
             return
         self._restoreRunGui()
         self.currentRunToken = None
         self.runContext = None
         self.inferenceProcessManager.cleanup()
-        self._cleanupBrainPreprocessing()
+        self._cleanupBrainPreprocessing(preserveVolumes=preservePreviews)
         self.activeRunId = None
 
     def _restoreRunGui(self):
         self._runGuiBusy = False
+        if self._resourceTimer:
+            self._resourceTimer.setInterval(5000)
         self.ui.applyButton.setText("Run")
         self.ui.applyButton.setStyleSheet("background-color: rgb(52, 206, 165);")
         self.ui.applyButton.setToolTip("Run the algorithm.")
@@ -805,6 +1039,8 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             widget = getattr(getattr(self, "ui", None), name, None)
             if widget:
                 widget.enabled = True
+        if hasattr(self, "remoteConnectButton"):
+            self.remoteConnectButton.setEnabled(True)
         if hasattr(self, "ui"):
             self._checkCanApply()
 

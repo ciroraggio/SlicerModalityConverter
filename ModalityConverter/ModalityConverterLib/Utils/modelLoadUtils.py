@@ -3,7 +3,15 @@ from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
 
 def import_onnx_model(modelPath, device): 
     try:
+        if device.startswith("cuda"):
+            # PyTorch wheels provide CUDA/cuDNN libraries used by the remote runtime.
+            # Load them before ORT initializes CUDAExecutionProvider.
+            import torch  # noqa: F401
         import onnxruntime as ort
+        if device.startswith("cuda"):
+            preload = getattr(ort, "preload_dlls", None)
+            if preload:
+                preload()
     except Exception as e:
         message = str(e)
         if "libcudart" in message:
@@ -36,4 +44,8 @@ def import_onnx_model(modelPath, device):
 
     print(f"{PRINT_MODULE_SUFFIX} Loading ONNX model with providers: {providers}")    
     model = ort.InferenceSession(modelPath, providers=providers)
+    activeProviders = model.get_providers()
+    print("{} ONNX Runtime active providers: {}".format(PRINT_MODULE_SUFFIX, activeProviders))
+    if device.startswith("cuda") and "CUDAExecutionProvider" not in activeProviders:
+        raise RuntimeError("ONNX Runtime did not activate CUDAExecutionProvider for requested device {}".format(device))
     return model

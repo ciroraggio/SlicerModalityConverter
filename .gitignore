@@ -6,4 +6,6 @@
 *.ipynb
 *.ipynb_checkpoints
 *__pycache__*
-*.log
+*.log.modalityconverter-server/
+.modalityconverter-server/
+**/ModalityConverter/Resources/RemoteSites/sites.json

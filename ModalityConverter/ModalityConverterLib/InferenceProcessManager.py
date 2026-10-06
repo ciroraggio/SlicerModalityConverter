@@ -73,6 +73,37 @@ class InferenceProcessManager(qt.QObject):
         process.start(pythonExecutable, arguments)
         return self.runToken
 
+    def startRemote(self, pythonExecutable, workerPath, context, serverUrl, bearerToken,
+                    inputPreprocessed=False):
+        """Run the HTTP bridge asynchronously, keeping network I/O off Slicer's UI thread."""
+        if self.isRunning:
+            raise RuntimeError("An inference process is already running")
+        self.workDir = context["workDir"]
+        self.runToken = str(uuid.uuid4())
+        self._stdoutBuffer, self._stdoutLog, self._stderrLog = "", [], []
+        self._cancelRequested = False
+        process = qt.QProcess(self)
+        self.process = process
+        process.setWorkingDirectory(self.workDir)
+        environment = qt.QProcessEnvironment.systemEnvironment()
+        environment.insert("MODALITY_CONVERTER_BEARER_TOKEN", bearerToken)
+        process.setProcessEnvironment(environment)
+        process.readyReadStandardOutput.connect(self._readStdout)
+        process.readyReadStandardError.connect(self._readStderr)
+        process.finished.connect(self._processFinished)
+        process.errorOccurred.connect(self._processError)
+        arguments = [workerPath, "--server", serverUrl, "--input", context["inputPath"],
+                     "--output", context["outputPath"], "--model", context["modelKey"],
+                     "--module", context["moduleName"], "--device", context["device"],
+                     "--show-previews", "1" if context["showAllFiles"] else "0"]
+        if inputPreprocessed:
+            arguments += ["--input-preprocessed"]
+        if context["maskPath"]:
+            arguments += ["--mask", context["maskPath"]]
+        self.started.emit(self.runToken)
+        process.start(pythonExecutable, arguments)
+        return self.runToken
+
     @staticmethod
     def _decodeOutput(data):
         try:

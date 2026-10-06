@@ -111,7 +111,7 @@ def main(argv=None):
         inputNode.modalityConverterBiasCorrected = args.input_preprocessed
         outputNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScalarVolumeNode", "OutputVolume")
 
-        report(2, "Loading model")
+        report(2, "Loading model on {}".format(args.device))
         import importlib
         from ModalityConverterLib.ModelBase import MODEL_REGISTRY
         importlib.import_module("ModalityConverterLib.ModelsImpl." + args.module)
