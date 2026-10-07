@@ -256,7 +256,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
 
         # Load widget from .ui file (created by Qt Designer).
         # Additional widgets can be instantiated manually and added to self.layout.
-        from qt import QIcon, QSize, QTimer, QProgressBar
+        from qt import QIcon, QSize, QTimer, QProgressBar, Qt
         
         uiWidget = slicer.util.loadUI(self.resourcePath("UI/ModalityConverter.ui"))
         self.layout.addWidget(uiWidget)
@@ -318,12 +318,23 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose)
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
 
-        self.ui.helpButton.setText("Guide  ")
+        self.ui.helpButton.setText("  Guide")
         iconPath = os.path.join(os.path.dirname(__file__), 'Resources', 'Icons', 'book.png')
         self.ui.helpButton.setIcon(QIcon(iconPath))
         self.ui.helpButton.setIconSize(QSize(16, 16))
+        self.ui.helpButton.setLayoutDirection(Qt.LeftToRight)
         self.ui.helpButton.connect("clicked(bool)", self.onHelpButtonClicked)
-        
+
+        iconDir = os.path.join(os.path.dirname(__file__), 'Resources', 'Icons')
+        self.ui.sampleDataButton.setIcon(QIcon(os.path.join(iconDir, 'download.png')))
+        self.ui.sampleDataButton.setIconSize(QSize(16, 16))
+        self.ui.sampleDataButton.setLayoutDirection(Qt.LeftToRight)
+        self.runIcon = QIcon(os.path.join(iconDir, 'play-button.png'))
+        self.stopIcon = QIcon(os.path.join(iconDir, 'pause.png'))
+        self.ui.applyButton.setIcon(self.runIcon)
+        self.ui.applyButton.setIconSize(QSize(16, 16))
+        self.ui.applyButton.setLayoutDirection(Qt.LeftToRight)
+
         self.ui.sampleDataButton.connect('clicked(bool)', self.onSampleDataButtonClicked)
         self.ui.installRequirementsButton.connect("clicked(bool)", self.onInstallRequirements)
         self.ui.installRequirementsButton.setVisible(False)
@@ -778,7 +789,8 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
 
     def setRunGuiBusy(self, busy):
         self._runGuiBusy = bool(busy)
-        self.ui.applyButton.setText("Stop" if busy else "Run")
+        self.ui.applyButton.setText("  Stop" if busy else "  Run")
+        self.ui.applyButton.setIcon(self.stopIcon if busy else self.runIcon)
         self.ui.applyButton.setStyleSheet(
             "background-color: rgba(210, 55, 55, 185);" if busy else
             "background-color: rgb(52, 206, 165);")
@@ -1048,7 +1060,8 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self._runGuiBusy = False
         if self._resourceTimer:
             self._resourceTimer.setInterval(self.POLLING_UPLOADING_TIMER_SHORT)
-        self.ui.applyButton.setText("Run")
+        self.ui.applyButton.setText("  Run")
+        self.ui.applyButton.setIcon(self.runIcon)
         self.ui.applyButton.setStyleSheet("background-color: rgb(52, 206, 165);")
         self.ui.applyButton.setToolTip("Run the algorithm.")
         self.setMainButtonsState(True)

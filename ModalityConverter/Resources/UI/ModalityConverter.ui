@@ -21,7 +21,7 @@
    <item>
     <widget class="QPushButton" name="helpButton">
      <property name="layoutDirection">
-      <enum>Qt::RightToLeft</enum>
+      <enum>Qt::LeftToRight</enum>
      </property>
      <property name="styleSheet">
       <string notr="true">background-color: rgb(153,203,252);</string>
@@ -70,7 +70,7 @@
 </string>
         </property>
         <property name="text">
-         <string>Download sample</string>
+         <string>  Download sample</string>
         </property>
        </widget>
       </item>
@@ -344,7 +344,7 @@
       <string notr="true">background-color: rgb(52, 206, 165);</string>
      </property>
      <property name="text">
-      <string>Run</string>
+      <string>  Run</string>
      </property>
     </widget>
    </item>

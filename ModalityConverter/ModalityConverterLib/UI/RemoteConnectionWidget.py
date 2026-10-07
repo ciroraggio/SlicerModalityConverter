@@ -8,7 +8,7 @@ class RemoteConnectionWidget(QWidget):
         super(RemoteConnectionWidget, self).__init__(parent)
         from qt import (
             QLabel, QVBoxLayout, QHBoxLayout,
-            QComboBox, QPushButton, QIcon, QSize, QGroupBox
+            QComboBox, QPushButton, QIcon, QSize, QGroupBox, Qt
         )
 
         iconDir = os.path.abspath(
@@ -56,11 +56,12 @@ class RemoteConnectionWidget(QWidget):
         layout.addLayout(siteRow)
 
         # Connect button
-        self.connectButton = QPushButton("Connect  ")
+        self.connectButton = QPushButton("  Connect")
         self.connectButton.setIcon(
             QIcon(os.path.join(iconDir, "test-connection.png"))
         )
         self.connectButton.setIconSize(QSize(16, 16))
+        self.connectButton.setLayoutDirection(Qt.LeftToRight)
         self.setConnected(False)
         layout.addWidget(self.connectButton)
 
@@ -76,12 +77,12 @@ class RemoteConnectionWidget(QWidget):
 
     def setConnected(self, connected):
         if connected:
-            self.connectButton.setText("Disconnect  ")
+            self.connectButton.setText("  Disconnect")
             self.connectButton.setStyleSheet(
                 "background-color: rgba(210, 55, 55, 185);"
             )
         else:
-            self.connectButton.setText("Connect  ")
+            self.connectButton.setText("  Connect")
             self.connectButton.setStyleSheet(
                 "background-color: rgb(153, 203, 252);"
             )
