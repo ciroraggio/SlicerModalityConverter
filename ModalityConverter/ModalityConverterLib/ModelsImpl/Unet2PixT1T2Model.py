@@ -17,17 +17,8 @@ class Unet2PixT1T2Model(BaseModel):
             if not os.path.exists(modelPath):
                 raise FileNotFoundError(f"Model file not found at {modelPath}")
             
-            if self.device != "cpu" and ort.get_device() != "GPU":
-            # if the user wants to use the GPU but onnxruntime is somehow not built with GPU support
-                slicer.util.errorDisplay("A GPU device is selected, but ONNX Runtime is not built with GPU support. Installation of ONNX Runtime GPU is required. Slicer will restart after installation.")
-                slicer.util.pip_install("onnxruntime-gpu")
-                slicer.app.restart()
-                
-            providers = ["CUDAExecutionProvider", "CPUExecutionProvider"] if self.device.startswith("cuda") else ["CPUExecutionProvider"]
-            
-            print(f"{PRINT_MODULE_SUFFIX} Loading ONNX model with providers: {providers}")
-            
-            self.ort_session = ort.InferenceSession(modelPath, providers=providers)
+            from ModalityConverterLib.Utils.modelLoadUtils import import_onnx_model
+            self.ort_session = import_onnx_model(modelPath, self.device)
             return self.ort_session
         
         except Exception as e:
@@ -99,6 +90,8 @@ class Unet2PixT1T2Model(BaseModel):
             generated_slice_final *= inputNp.max()
 
             outputNp[z, :, :] = generated_slice_final
+            if (z + 1) % max(1, d_orig // 20) == 0:
+                self.reportProgress(round((z + 1) * 100 / d_orig), "Processing slices")
 
         slicer.util.updateVolumeFromArray(outputVolume, outputNp)
         outputVolume.CopyOrientation(inputVolume)

@@ -250,7 +250,7 @@
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Output volume:</string>
+         <string>Output volume</string>
         </property>
        </widget>
       </item>
@@ -315,7 +315,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>Device:</string>
+         <string>Device</string>
         </property>
        </widget>
       </item>

@@ -5,6 +5,10 @@ set(MODULE_NAME ModalityConverter)
 set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}.py
   ${MODULE_NAME}Lib/ModelBase.py
+  ${MODULE_NAME}Lib/InferenceProcessManager.py
+  ${MODULE_NAME}Lib/inference_worker.py
+  ${MODULE_NAME}Lib/remote_client_worker.py
+  ${MODULE_NAME}Lib/remote_server.py
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainBaseModel.py
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainFuModel.py
   ${MODULE_NAME}Lib/ModelsImpl/FedSynthBrainLiModel.py
@@ -13,6 +17,9 @@ set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}Lib/ModelsImpl/Unet2PixT1T2Model.py
   ${MODULE_NAME}Lib/ModelsImpl/CT2PETMoriModel.py
   ${MODULE_NAME}Lib/UI/HelpDialog.py
+  ${MODULE_NAME}Lib/UI/RemoteSitesDialog.py
+  ${MODULE_NAME}Lib/UI/RemoteConnectionWidget.py
+  ${MODULE_NAME}Lib/UI/ResourceUsageWidget.py
   ${MODULE_NAME}Lib/UI/utils.py
   ${MODULE_NAME}Lib/Utils/customTransformsUtils.py
   ${MODULE_NAME}Lib/Utils/modelLoadUtils.py
@@ -22,7 +29,11 @@ set(MODULE_PYTHON_RESOURCES
   Resources/Icons/${MODULE_NAME}.png
   Resources/UI/${MODULE_NAME}.ui
   Resources/Icons/book.png
+  Resources/Icons/settings.png
+  Resources/Icons/test-connection.png
+  Resources/Icons/trash.png
   Resources/Models/metadata.json
+  Resources/RemoteSites/sites.json
   )
 
 #-----------------------------------------------------------------------------

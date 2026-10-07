@@ -118,8 +118,13 @@ class FedSynthCBCTPix2PixModel(BaseModel):
             (1, 1, preprocessedInput.shape[2], preprocessedInput.shape[3]), device=self.device
         )
 
+        totalSlices = len(sCT) * preprocessedInput.shape[1]
+        completedSlices = 0
         for view in sCT:
             for sliceIndex in range(preprocessedInput.shape[1]):
+                completedSlices += 1
+                if completedSlices % max(1, totalSlices // 20) == 0:
+                    self.reportProgress(round(completedSlices * 100 / totalSlices), "Running inference")
                 if view == "first_plane":
                     inputSlice = preprocessedInput[0, sliceIndex, :, :]
                     maskSlice = preprocessedMask[0, sliceIndex, :, :]

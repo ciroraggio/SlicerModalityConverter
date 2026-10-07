@@ -8,20 +8,20 @@ from ModalityConverterLib.UI.utils import PRINT_MODULE_SUFFIX
 @register_model("ct2pet_mori")
 class CT2PETMoriModel(BaseModel):
     """Model class for CT to PET inference"""
-    
+
     def __init__(self, modelKey: str, device: str = "cpu"):
         """
         Initialize the model class
-        
+
         Parameters:
             modelKey (str): Key/identifier for the model
             device (str): Device to run inference on ('cpu' or 'cuda')
         """
         super().__init__(modelKey, device)
-        
-    
+
+
     def _loadModelFromPath(self, modelPath):
-        # Model instance will be stored by the BaseModel class in self.model 
+        # Model instance will be stored by the BaseModel class in self.model
         if (slicer.app.majorVersion, slicer.app.minorVersion) < (5, 10):
             raise RuntimeError(
                 "This model is supported only for 3D Slicer >= 5.10. "
@@ -40,18 +40,18 @@ class CT2PETMoriModel(BaseModel):
         """Preprocess CT image"""
         img = clip(array(im), minn, maxx)
         return (img - minn) / (maxx - minn)
-    
+
     def _edge_zero(self, img):
         """Zero out edges of the image"""
         img[:, [0, -1], :] = 0
         img[:, :, [0, -1]] = 0
         return img
-    
+
     def _post_gamma_PET(self, img, gamma=1/2, maxx=7.0):
         from numpy import power, clip
         """Post-process PET image with gamma correction"""
         return power(clip(img, 0.0, 1.0), 1/gamma) * maxx
-    
+
     def runInference(
         self,
         inputVolume: vtkMRMLScalarVolumeNode,
@@ -109,9 +109,7 @@ class CT2PETMoriModel(BaseModel):
             if (count + 1) in milestones:
                 pct = round((count + 1) / n_slide * 100)
                 print(f"{PRINT_MODULE_SUFFIX} Processed {count + 1}/{n_slide} slices ({pct}%)")
-                slicer.app.processEvents()
-
-            slicer.app.processEvents()
+                self.reportProgress(pct, "Processed {} of {} slices".format(count + 1, n_slide))
 
         # Post-process PET
         PET = self._post_gamma_PET(PET, maxx=7.0)
