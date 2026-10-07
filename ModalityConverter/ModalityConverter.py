@@ -309,7 +309,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self.ui.advancedCollapsibleButton, advancedLayout)
         self._resourceTimer = QTimer(uiWidget)
         self._resourceTimer.timeout.connect(self.updateResourceUsage)
-        self._resourceTimer.start(5000)
+        self._resourceTimer.start(self.POLLING_UPLOADING_TIMER_SHORT)
         self.updateResourceUsage()
 
         # Connections
@@ -521,7 +521,9 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
                 if isinstance(legacyProfiles, list) and legacyProfiles:
                     profiles = legacyProfiles
             return [{"name": item.get("name", ""), "host": item.get("host", ""),
-                     "port": str(item.get("port", "8765")), "token": ""}
+                     "port": str(item.get("port", "8765")), "token": "",
+                     "scheme": str(item.get("scheme", "http")).lower(),
+                     "certificate": str(item.get("certificate", ""))}
                     for item in profiles if item.get("name") and item.get("host")]
         except Exception:
             logging.exception("Could not load saved remote site profiles from %s", profilesPath)
@@ -530,7 +532,8 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     def _saveRemoteSiteProfiles(self, sites):
         import json
         # Bearer tokens are session-only; persist only non-secret connection details.
-        profiles = [{"name": site["name"], "host": site["host"], "port": site["port"]}
+        profiles = [{"name": site["name"], "host": site["host"], "port": site["port"],
+                    "scheme": site.get("scheme", "http"), "certificate": site.get("certificate", "")}
                     for site in sites]
         profilesPath = os.path.join(os.path.dirname(__file__), "Resources", "RemoteSites", "sites.json")
         with open(profilesPath, "w", encoding="utf-8") as profilesFile:
@@ -562,24 +565,30 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             host = site["host"].strip().rstrip("/")
             if not host:
                 raise ValueError("Enter the server address")
-            if "://" not in host:
-                host = "http://" + host
+            scheme = site.get("scheme", "http").lower()
+            if scheme not in ("http", "https"):
+                raise ValueError("Choose HTTP or HTTPS")
+            host = host.replace("http://", "").replace("https://", "").strip("/")
             port = int(site["port"])
             if not 1 <= port <= 65535:
                 raise ValueError("Port must be between 1 and 65535")
-            url = host if host.rsplit(":", 1)[-1].isdigit() else "{}:{}".format(host, port)
+            url = "{}://{}:{}".format(scheme, host, port)
+            certificate = site.get("certificate", "").strip() if scheme == "https" else True
+            if scheme == "https" and (not certificate or not os.path.isfile(certificate)):
+                raise ValueError("Select the server public certificate file for HTTPS")
             token = site.get("token", "").strip()
             if not token:
                 raise ValueError("Update the bearer token for this site in Manage sites before connecting")
             headers = {"Authorization": "Bearer " + token}
-            response = requests.get(url + "/api/v1/health", headers=headers, timeout=4)
+            response = requests.get(url + "/api/v1/health", headers=headers, timeout=4, verify=certificate)
             response.raise_for_status()
             health = response.json()
             if not isinstance(health.get("models"), dict):
                 raise ValueError("Remote server returned an invalid model catalog")
-            resourcesResponse = requests.get(url + "/api/v1/resources", headers=headers, timeout=5)
+            resourcesResponse = requests.get(url + "/api/v1/resources", headers=headers, timeout=5, verify=certificate)
             resourcesResponse.raise_for_status()
             self.remoteServerUrl, self.remoteToken = url, token
+            site["certificate"] = certificate if scheme == "https" else ""
             self.activeRemoteSite = site
             self.ui.deviceList.clear()
             self.ui.deviceList.addItem("Remote CPU", {"key": "cpu"})
@@ -587,8 +596,9 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self.remoteResources = resources
             remoteGpuAvailable = bool(resources.get("cuda_available") and resources.get("gpus"))
             for gpu in resources.get("gpus", []) if resources.get("cuda_available") else []:
+                cudaIndex = gpu.get("cuda_index", gpu["index"])
                 self.ui.deviceList.addItem("Remote GPU {} - {}".format(gpu["index"], gpu["name"]),
-                                           {"key": "cuda:{}".format(gpu["index"])})
+                                           {"key": "cuda:{}".format(cudaIndex)})
             self.ui.deviceList.setCurrentIndex(1 if remoteGpuAvailable else 0)
             if resources.get("gpus") and not resources.get("cuda_available"):
                 reason = resources.get("cuda_reason") or "CUDA runtime unavailable"
@@ -650,20 +660,22 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
 
     def _launchRemoteInference(self, context, inputPreprocessed=False):
         if self._resourceTimer:
-            self._resourceTimer.setInterval(5000)
+            self._resourceTimer.setInterval(self.POLLING_UPLOADING_TIMER_SHORT)
         context["workerPath"] = os.path.join(os.path.dirname(__file__), "ModalityConverterLib", "remote_client_worker.py")
         self.runContext = context
         self.updateInfoLabel("Sending volume to remote server using {}...".format(context["device"]))
         self.currentRunToken = self.inferenceProcessManager.startRemote(
             self.logic.pythonExecutable(), context["workerPath"], context,
-            self.remoteServerUrl, self.remoteToken, inputPreprocessed=inputPreprocessed)
+            self.remoteServerUrl, self.remoteToken, inputPreprocessed=inputPreprocessed,
+            certificate=(self.activeRemoteSite.get("certificate", "") if self.activeRemoteSite else ""))
 
     def updateResourceUsage(self):
         if self.remoteServerUrl and self.remoteToken:
             try:
                 import requests
                 response = requests.get(self.remoteServerUrl + "/api/v1/resources",
-                    headers={"Authorization": "Bearer " + self.remoteToken}, timeout=10)
+                    headers={"Authorization": "Bearer " + self.remoteToken}, timeout=10,
+                    verify=(self.activeRemoteSite.get("certificate") or True) if self.activeRemoteSite else True)
                 response.raise_for_status()
                 self.remoteResources = response.json()
             except Exception as exc:
@@ -675,14 +687,24 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
                     self.remoteStatusLabel.setStyleSheet("color: #16803c; font-weight: 600;")
         if self.remoteServerUrl:
             data = self.remoteResources or {}
-            self._setResourceBar("cpu", data.get("cpu_percent"),
-                "Remote CPU used: {:.0f}%".format(data["cpu_percent"]) if data.get("cpu_percent") is not None else "Remote CPU used: N/D")
-            total, used = data.get("ram_total"), data.get("ram_used")
-            self._setResourceBar("ram", 100.0 * used / total if total else None,
-                "Remote RAM used: {:.1f} / {:.1f} GB".format(used / 1024**3, total / 1024**3) if total else "Remote RAM used: N/D")
-            gpu = next((g for g in data.get("gpus", []) if "cuda:{}".format(g["index"]) == (self.selectedDeviceKey or "")), None)
+            activeJobs = data.get("active_jobs", 0)
+            cpu = data.get("worker_cpu_percent") if activeJobs else data.get("cpu_percent")
+            cpuLabel = ("Remote inference CPU: {:.0f}% ({} job{})".format(
+                cpu, activeJobs, "s" if activeJobs != 1 else "") if activeJobs else
+                "Remote server CPU used: {:.0f}%".format(cpu) if cpu is not None else "Remote CPU used: N/D")
+            self._setResourceBar("cpu", cpu, cpuLabel)
+            total = data.get("ram_total")
+            used = data.get("worker_ram_used") if activeJobs else data.get("ram_used")
+            ramLabel = ("Remote inference RAM: {:.1f} GB".format(used / 1024**3) if activeJobs else
+                "Remote RAM used: {:.1f} / {:.1f} GB".format(used / 1024**3, total / 1024**3)
+                if total else "Remote RAM used: N/D")
+            self._setResourceBar("ram", 100.0 * used / total if total and used is not None else None, ramLabel)
+            gpu = next((g for g in data.get("gpus", [])
+                        if "cuda:{}".format(g.get("cuda_index", g["index"])) == (self.selectedDeviceKey or "")), None)
             self._setResourceBar("gpu", gpu.get("utilization") if gpu else None,
-                "Remote GPU used: {:.1f} / {:.1f} GB".format(gpu["memory_used_mb"] / 1024, gpu["memory_total_mb"] / 1024) if gpu else "Remote GPU used: N/D")
+                "Remote GPU {} ({}): {:.1f} / {:.1f} GB".format(
+                    gpu["index"], gpu["name"], gpu["memory_used_mb"] / 1024,
+                    gpu["memory_total_mb"] / 1024) if gpu else "Remote GPU used: N/D")
             return
         cpu = None
         ramUsed = None
@@ -941,17 +963,35 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             return
         try:
             import numpy as np
+
             output = np.load(self.runContext["outputPath"], allow_pickle=False)
+
             if output.ndim != 3 or output.size == 0:
                 raise ValueError("Worker output is not a non-empty 3D volume")
+
             outputVolume = self.runContext["outputVolume"]
             slicer.util.updateVolumeFromArray(outputVolume, output)
             outputVolume.CopyOrientation(self.runContext["inputVolume"])
+
             if self.runContext.get("moduleName") == "CT2PETMoriModel":
                 displayNode = outputVolume.GetDisplayNode()
                 if displayNode:
-                    displayNode.SetAndObserveColorNodeID("vtkMRMLColorTableNodePET-Rainbow2")
-                    displayNode.AutoWindowLevelOn()
+                    colorNodeId = "vtkMRMLColorTableNodePET-Rainbow2"
+                    colorNode = slicer.mrmlScene.GetNodeByID(colorNodeId)
+                    if colorNode:
+                        # Mori's post-processing returns SUV values on a 0–7 scale.
+                        # Keep the PET palette mapped to that scale instead of
+                        # allowing automatic window/level to reset it to grayscale.
+                        lookupTable = colorNode.GetLookupTable()
+                        if lookupTable:
+                            lookupTable.SetRange(0.0, 7.0)
+                            lookupTable.Build()
+                            lookupTable.Modified()
+                        displayNode.SetAndObserveColorNodeID(colorNodeId)
+                        displayNode.AutoWindowLevelOff()
+                        displayNode.SetWindow(7.0)
+                        displayNode.SetLevel(3.5)
+
             previewNodes = {}
             if self.runContext["showAllFiles"]:
                 previewDir = os.path.join(self.runContext["workDir"], "previews")
@@ -965,6 +1005,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
                         slicer.util.updateVolumeFromArray(previewNode, array)
                         previewNode.CopyOrientation(self.runContext["inputVolume"])
                         previewNodes[name] = previewNode
+
             foreground = previewNodes.get("PreprocessedInputVolume")
             slicer.util.setSliceViewerLayers(background=outputVolume, foreground=foreground)
             slicer.util.resetSliceViews()
@@ -1006,7 +1047,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     def _restoreRunGui(self):
         self._runGuiBusy = False
         if self._resourceTimer:
-            self._resourceTimer.setInterval(5000)
+            self._resourceTimer.setInterval(self.POLLING_UPLOADING_TIMER_SHORT)
         self.ui.applyButton.setText("Run")
         self.ui.applyButton.setStyleSheet("background-color: rgb(52, 206, 165);")
         self.ui.applyButton.setToolTip("Run the algorithm.")

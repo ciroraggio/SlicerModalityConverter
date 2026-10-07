@@ -4,6 +4,11 @@ set -euo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PORT="${PORT:-8765}"
+USE_HTTPS="${USE_HTTPS:-0}"
+if [[ "$USE_HTTPS" != "0" && "$USE_HTTPS" != "1" ]]; then
+  echo "USE_HTTPS must be 0 or 1 (got: $USE_HTTPS)." >&2
+  exit 2
+fi
 # Loopback is the safe default for plain HTTP. Set BIND_HOST explicitly to make
 # the service reachable from another computer (for example BIND_HOST=0.0.0.0).
 BIND_HOST="${BIND_HOST:-127.0.0.1}"
@@ -33,12 +38,29 @@ else
   [[ -n "$CLIENT_ADDRESS" ]] || CLIENT_ADDRESS="$BIND_HOST"
 fi
 echo
-echo "In Slicer > ModalityConverter > Advanced, use address http://${CLIENT_ADDRESS} and port ${PORT}."
-if [[ "$BIND_HOST" != "127.0.0.1" && "$BIND_HOST" != "localhost" ]]; then
-  echo "Plain HTTP is enabled. Restrict port ${PORT} to trusted clients with the server firewall/VPN."
-else
+SERVER_ARGS=(--host "$BIND_HOST" --port "$PORT")
+SCHEME="http"
+if [[ "$USE_HTTPS" == "1" ]]; then
+  command -v openssl >/dev/null || { echo "OpenSSL is required to generate the HTTPS certificate." >&2; exit 1; }
+  TLS_DIR="$ROOT/.modalityconverter-server/tls"
+  mkdir -p "$TLS_DIR"
+  chmod 700 "$TLS_DIR"
+  if [[ ! -f "$TLS_DIR/server.crt" || ! -f "$TLS_DIR/server.key" ]]; then
+    openssl req -x509 -newkey rsa:3072 -sha256 -days 3650 -nodes \
+      -keyout "$TLS_DIR/server.key" -out "$TLS_DIR/server.crt" \
+      -subj "/CN=${CLIENT_ADDRESS}" -addext "subjectAltName=IP:${CLIENT_ADDRESS},DNS:${CLIENT_ADDRESS}" >/dev/null 2>&1
+    chmod 600 "$TLS_DIR/server.key"
+  fi
+  SERVER_ARGS+=(--ssl-certfile "$TLS_DIR/server.crt" --ssl-keyfile "$TLS_DIR/server.key")
+  SCHEME="https"
+  echo "HTTPS certificate (copy this public file to Slicer): $TLS_DIR/server.crt"
+  echo "Keep server.key private; do not copy or share it."
+fi
+echo "In Slicer > ModalityConverter > Advanced, use address ${SCHEME}://${CLIENT_ADDRESS} and port ${PORT}."
+if [[ "$BIND_HOST" == "127.0.0.1" || "$BIND_HOST" == "localhost" ]]; then
   echo "Loopback binding only: set BIND_HOST to a server interface address to accept remote clients."
+elif [[ "$USE_HTTPS" != "1" ]]; then
+  echo "Plain HTTP is enabled. Restrict port ${PORT} to trusted clients with the server firewall/VPN."
 fi
 echo "The bearer token is provided below. Keep it private. Stop this server with Ctrl+C."
-exec "$VPY" "$ROOT/ModalityConverter/ModalityConverterLib/remote_server.py" \
-  --host "$BIND_HOST" --port "$PORT"
+exec "$VPY" "$ROOT/ModalityConverter/ModalityConverterLib/remote_server.py" "${SERVER_ARGS[@]}"

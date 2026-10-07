@@ -15,6 +15,7 @@ def main():
     for name in ("server", "input", "output", "model", "module", "device"):
         parser.add_argument("--" + name, required=True)
     parser.add_argument("--mask")
+    parser.add_argument("--certificate", default="")
     parser.add_argument("--show-previews", default="1")
     parser.add_argument("--input-preprocessed", action="store_true")
     args = parser.parse_args()
@@ -24,6 +25,7 @@ def main():
     import requests
     from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
     headers = {"Authorization": "Bearer " + token}
+    verify = args.certificate or True
     url = args.server.rstrip("/") + "/api/v1/inference"
     openFiles = []
     try:
@@ -59,7 +61,7 @@ def main():
         headers["Content-Type"] = monitor.content_type
         report(0, "Uploading volume to remote site")
         try:
-            response = requests.post(url, headers=headers, data=monitor, timeout=None)
+            response = requests.post(url, headers=headers, data=monitor, timeout=None, verify=verify)
         except requests.RequestException as exc:
             raise RuntimeError("Volume upload failed before the remote site accepted the job: {}".format(exc)) from exc
     finally:
@@ -71,7 +73,7 @@ def main():
     consecutiveStatusFailures = 0
     while True:
         try:
-            status = requests.get(status_url, headers=headers, timeout=(10, 60))
+            status = requests.get(status_url, headers=headers, timeout=(10, 60), verify=verify)
             status.raise_for_status()
         except requests.RequestException as exc:
             consecutiveStatusFailures += 1
@@ -90,7 +92,7 @@ def main():
             break
         time.sleep(1)
     report(99, "Downloading inference result...")
-    result = requests.get(status_url + "/result", headers=headers, timeout=(15, None), stream=True)
+    result = requests.get(status_url + "/result", headers=headers, timeout=(15, None), stream=True, verify=verify)
     result.raise_for_status()
     with open(args.output, "wb") as output:
         for chunk in result.iter_content(chunk_size=1024 * 1024):
@@ -99,7 +101,7 @@ def main():
     if args.show_previews == "1":
         report(99, "Downloading preview volumes...")
         previewResponse = requests.get(status_url + "/previews", headers=headers,
-                                       timeout=(15, None), stream=True)
+                                       timeout=(15, None), stream=True, verify=verify)
         if previewResponse.status_code == 404:
             previewResponse.close()
             previewResponse = None

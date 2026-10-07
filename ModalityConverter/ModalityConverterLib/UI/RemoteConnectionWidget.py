@@ -22,7 +22,7 @@ class RemoteConnectionWidget(QWidget):
         mainLayout.setContentsMargins(0, 0, 0, 0)
 
         # Title OUTSIDE the box
-        self.currentResourcesLabel = QLabel("Remote connections")
+        self.currentResourcesLabel = QLabel("Remote connection")
         self.currentResourcesLabel.setStyleSheet(
             "font-weight: bold; margin-top: 4px;"
         )

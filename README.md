@@ -26,13 +26,15 @@
   - [ModalityConverter](#modalityconverter)
     - [Key Features](#key-features)
     - [How to Use](#how-to-use)
-    - [Remote inference](#remote-inference)
-      - [Server side](#server-side)
-      - [Client side](#client-side)
     - [Available Models](#available-models)
-    - [Example (with video)](#example-with-video)
+    - [How to setup remote inference](#how-to-setup-remote-inference)
+      - [Server side (HTTP configuration)](#server-side-http-configuration)
+      - [Server side (HTTPS configuration)](#server-side-https-configuration)
+      - [Client side (HTTP configuration)](#client-side-http-configuration)
+      - [Client side (HTTPS configuration)](#client-side-https-configuration)
+    - [Examples (with video)](#examples-with-video)
     - [How to Integrate a Custom Model](#how-to-integrate-a-custom-model)
-    - [Summary of Requirements](#summary-of-requirements)
+      - [Summary of Requirements](#summary-of-requirements)
   - [Synthetic Image Quality Assessment](#synthetic-image-quality-assessment)
     - [Available Models](#available-models-1)
     - [How to Integrate a Custom Model](#how-to-integrate-a-custom-model-1)
@@ -78,48 +80,6 @@ Here is a short [video tutorial](https://youtu.be/QsxzjQb05D4?feature=shared) sh
 - Optionally provide a binary mask to focus the translation on specific regions
 - Click "Run" to generate the synthetic image
 
-### Remote inference
-
-Remote inference runs models on a remote server while you use the Slicer interface locally.
-
-#### Server side
-
-On the remote server, clone the repository:
-
-```sh
-git clone https://github.com/ciroraggio/SlicerModalityConverter.git
-```
-
-install the dependencies:
-
-```sh
-./install_remote_server.sh
-```
-
-and run the server code:
-
-```sh
-BIND_HOST=0.0.0.0 ./start_remote_server.sh
-```
-The default bind address is `127.0.0.1`. Use `BIND_HOST=0.0.0.0` only when access from another computer is needed, and restrict access with a firewall or VPN. HTTP does not encrypt bearer tokens or medical volumes. Use a trusted network and matching client/server repository versions.
-
-#### Client side
-
-Open the ModalityConverter extension and set your remote site/s using the dedicated section in **Advanced -> Manage sites**:
-
-1. click on the settings icon
-2. add the server name, address, port, and bearer token (tokens are session-only).
-3. save the changes
-4. select the site from the list and click **Connect**. 
- 
-Sites are stored in `ModalityConverter/Resources/RemoteSites/sites.json`.
-
-The remote resources (CPU and GPUs) will be available in the **Device** list.
-
-The resource indicators show server usage. Tokens are kept for the current Slicer session.
-
-For models that rely on other Slicer modules for processing, the Slicer part will be run locally before the preprocessed volumes are sent.
-
 
 ### Available Models
 
@@ -131,8 +91,125 @@ For models that rely on other Slicer modules for processing, the Slicer part wil
 | CBCT → CT | Head & Neck | Raggio et al., A Privacy-Preserving Federated Learning Framework for Generalizable CBCT to Synthetic CT Translation in Head and Neck | [Read more](https://doi.org/10.3389/fdgth.2026.1812254) |
 | CT → PET | Chest/Lung | Salehjahromi, Karpinets et al., Synthetic PET from CT improves diagnosis and prognosis for lung cancer: Proof of concept | [Read more](https://www.sciencedirect.com/science/article/pii/S2666379124001071) |
 
+### How to setup remote inference
 
-### Example (with video)
+Remote inference runs models on a remote server while you use the Slicer interface locally.
+
+#### Server side (HTTP configuration)
+
+1. **Use HTTP only on a private and/or trusted network!** On the remote server, clone the repository:
+
+```sh
+git clone https://github.com/ciroraggio/SlicerModalityConverter.git
+```
+
+2. Move to the root folder:
+
+```sh
+cd SlicerModalityConverter
+```
+
+3. Install the dependencies:
+
+```sh
+./install_remote_server.sh
+```
+
+4. Start the HTTP server:
+
+```sh
+BIND_HOST=0.0.0.0 ./start_remote_server.sh
+```
+
+<center>
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerModalityConverter/main/ModalityConverter/assets/ServerHttpOutExample.png" />
+</center>
+
+#### Server side (HTTPS configuration)
+
+1. On the remote server, clone the repository:
+
+```sh
+git clone https://github.com/ciroraggio/SlicerModalityConverter.git
+```
+
+2. Move to the root folder:
+
+```sh
+cd SlicerModalityConverter
+```
+
+3. Install the dependencies:
+
+```sh
+./install_remote_server.sh
+```
+
+4. Start the HTTPS server:
+
+```sh
+BIND_HOST=0.0.0.0 USE_HTTPS=1 ./start_remote_server.sh
+```
+
+<center>
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerModalityConverter/main/ModalityConverter/assets/ServerHttpsOutExample.png" />
+</center>
+
+
+Copy/send the printed `server.crt` file to the client. **Keep `server.key` private on the server!**
+
+
+**Note**: the server creates its certificate and private key on first HTTPS startup and reuses them. If the server IP changes, remove `.modalityconverter-server/tls` and restart to generate a certificate for the new address.
+
+
+#### Client side (HTTP configuration)
+
+Open the ModalityConverter extension and set your remote site/s using the dedicated section in **Advanced -> Remote connection**:
+
+1. Click on the settings icon (⚙️)
+2. Add the server name, address, port, and session token generated by the server script.
+   
+<center>
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerModalityConverter/main/ModalityConverter/assets/ClientRemoteHttpConfExample.png" />
+</center>
+
+3. Save the changes
+4. Select the site from the list and click **Connect**.
+
+<center>
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerModalityConverter/main/ModalityConverter/assets/ConnectedRemoteExample.png" />
+</center>
+
+#### Client side (HTTPS configuration)
+
+Open the ModalityConverter extension and set your remote site/s using the dedicated section in **Advanced -> Remote connection**:
+
+1. Click on the settings icon (⚙️)
+2. Choose **HTTPS** instead of HTTP
+3. Add the server name, address, port, and bearer token (tokens are session-only)
+4. Select the certificate file: `server.crt`. The server script generates it. You need to copy it from the server.
+
+<center>
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerModalityConverter/main/ModalityConverter/assets/ClientRemoteHttpsConfExample.png" />
+</center>
+
+5. Save the changes
+6. Select the site from the list and click **Connect**. The client verifies the selected certificate. A missing or mismatched certificate is rejected.
+
+<center>
+<img src="https://raw.githubusercontent.com/ciroraggio/SlicerModalityConverter/main/ModalityConverter/assets/ConnectedRemoteExample.png" />
+</center>
+
+Sites are stored in `ModalityConverter/Resources/RemoteSites/sites.json`.
+
+The remote resources (CPU and GPUs) will be available in the **Device** list.
+
+The resource indicators show server usage. Tokens are kept for the current Slicer session.
+
+For models that rely on other Slicer modules for processing, the Slicer part will be run locally before the preprocessed volumes are sent.
+
+
+### Examples (with video)
 
 1. Click **Download sample** to open the *Sample Data* module.  
 2. Download the **MRHead** volume.  
@@ -299,7 +376,7 @@ Here is a basic example to get started:
 
 ---
 
-### Summary of Requirements
+#### Summary of Requirements
 
 | Requirement         | Description                                                                      |
 | ------------------- | -------------------------------------------------------------------------------- |

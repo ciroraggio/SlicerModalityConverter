@@ -94,16 +94,64 @@ def resources(authorization: str = Header(default="")):
     authorize(authorization[len("Bearer "):] if authorization.startswith("Bearer ") else authorization)
     import psutil
     gpuCapabilities = _gpu_capabilities()
-    data = {"cpu_percent": psutil.cpu_percent(), "ram_used": psutil.virtual_memory().used,
-            "ram_total": psutil.virtual_memory().total, "gpus": [], **gpuCapabilities}
+    activeProcesses = []
+    for job in list(JOBS.values()):
+        process = job.get("process")
+        if process is not None and process.poll() is None:
+            try:
+                worker = psutil.Process(process.pid)
+                activeProcesses.append((worker.cpu_percent(), worker.memory_info().rss))
+            except (psutil.Error, OSError):
+                pass
+    workerCpu = sum(cpu for cpu, _ in activeProcesses)
+    workerRam = sum(ram for _, ram in activeProcesses)
+    memory = psutil.virtual_memory()
+    data = {"cpu_percent": psutil.cpu_percent(), "ram_used": memory.used,
+            "ram_total": memory.total, "worker_cpu_percent": workerCpu,
+            "worker_ram_used": workerRam, "active_jobs": len(activeProcesses),
+            "cpu_count": psutil.cpu_count() or 1, "gpus": [], **gpuCapabilities}
     try:
-        result = subprocess.run(["nvidia-smi", "--query-gpu=index,name,utilization.gpu,memory.used,memory.total",
+        result = subprocess.run(["nvidia-smi", "--query-gpu=index,uuid,name,utilization.gpu,memory.used,memory.total",
                                  "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=2)
         if result.returncode == 0:
+            physicalGpus = []
             for line in result.stdout.splitlines():
-                i, name, util, used, total = [x.strip() for x in line.split(",", 4)]
-                data["gpus"].append({"index": int(i), "name": name, "utilization": float(util),
-                                     "memory_used_mb": float(used), "memory_total_mb": float(total)})
+                i, uuid, name, util, used, total = [x.strip() for x in line.split(",", 5)]
+                physicalGpus.append({"index": int(i), "uuid": uuid, "name": name,
+                                     "utilization": float(util), "memory_used_mb": float(used),
+                                     "memory_total_mb": float(total)})
+
+            # nvidia-smi reports physical indexes, while ONNX Runtime's
+            # device_id follows CUDA's logical ordering (which can change with
+            # CUDA_VISIBLE_DEVICES). Map both so the UI monitors the same GPU
+            # that inference selected.
+            cudaIndexByUuid = {}
+            if gpuCapabilities.get("cuda_available"):
+                try:
+                    import torch
+                    for cudaIndex in range(torch.cuda.device_count()):
+                        deviceUuid = getattr(torch.cuda.get_device_properties(cudaIndex), "uuid", None)
+                        if deviceUuid:
+                            if isinstance(deviceUuid, bytes):
+                                deviceUuid = deviceUuid.decode("ascii", errors="ignore")
+                            cudaIndexByUuid[str(deviceUuid).lower()] = cudaIndex
+                except Exception:
+                    pass
+            visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+            visibleTokens = [token.strip() for token in visible.split(",")] if visible else []
+            for gpu in physicalGpus:
+                cudaIndex = cudaIndexByUuid.get(gpu["uuid"].lower())
+                if cudaIndex is None:
+                    if not visible:
+                        cudaIndex = gpu["index"]
+                    else:
+                        for logicalIndex, token in enumerate(visibleTokens):
+                            if token == str(gpu["index"]) or token.lower() == gpu["uuid"].lower():
+                                cudaIndex = logicalIndex
+                                break
+                if cudaIndex is not None:
+                    gpu["cuda_index"] = cudaIndex
+                data["gpus"].append(gpu)
     except Exception:
         pass
     return data
@@ -214,6 +262,8 @@ def main():
     parser.add_argument("--host", default="127.0.0.1", help="Bind address (default: localhost)")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--token", default="", help="Bearer token; generated if omitted")
+    parser.add_argument("--ssl-certfile", default="")
+    parser.add_argument("--ssl-keyfile", default="")
     args = parser.parse_args()
     TOKEN = args.token or secrets.token_urlsafe(32)
     print("ModalityConverter bearer token: {}".format(TOKEN), flush=True)
@@ -224,7 +274,10 @@ def main():
         print("Remote GPU inference unavailable; CPU remains available: {}".format(
             capabilities["cuda_reason"]), flush=True)
     import uvicorn
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+    if bool(args.ssl_certfile) != bool(args.ssl_keyfile):
+        parser.error("--ssl-certfile and --ssl-keyfile must be provided together")
+    uvicorn.run(app, host=args.host, port=args.port, log_level="info",
+                ssl_certfile=args.ssl_certfile or None, ssl_keyfile=args.ssl_keyfile or None)
 
 
 if __name__ == "__main__": main()

@@ -9,3 +9,4 @@
 *.log.modalityconverter-server/
 .modalityconverter-server/
 **/ModalityConverter/Resources/RemoteSites/sites.json
+*.crt

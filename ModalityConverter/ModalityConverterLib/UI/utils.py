@@ -32,6 +32,8 @@ SlicerModalityConverter is an open-source 3D Slicer extension designed for medic
 <ul>
     <li>View the source code on GitHub: <a href="https://github.com/ciroraggio/SlicerModalityConverter">https://github.com/ciroraggio/SlicerModalityConverter</a></li>
     <li><a href="https://github.com/ciroraggio/SlicerModalityConverter/blob/main/README.md#how-to-integrate-a-custom-model">How to integrate your models in ModalityConverter</a></li>
+    <li><a href="https://github.com/ciroraggio/SlicerModalityConverter/blob/main/README.md#how-to-setup-remote-inference">How to setup remote inference</a></li>
+    
 </ul>
 <br/>
 <b>How to cite</b>

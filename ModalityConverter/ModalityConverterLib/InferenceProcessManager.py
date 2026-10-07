@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import signal
 import uuid
 
 import qt
@@ -28,6 +29,7 @@ class InferenceProcessManager(qt.QObject):
         self._stderrLog = []
         self._cancelRequested = False
         self._killTimer = None
+        self._processGroupId = None
 
     @property
     def isRunning(self):
@@ -70,11 +72,40 @@ class InferenceProcessManager(qt.QObject):
         if extraArguments:
             arguments.extend(extraArguments)
         self.started.emit(self.runToken)
-        process.start(pythonExecutable, arguments)
+        self._startWorkerProcess(process, pythonExecutable, arguments)
         return self.runToken
 
+    def _startWorkerProcess(self, process, pythonExecutable, arguments):
+        """Start local inference in its own process group when the platform supports it."""
+        setsid = shutil.which("setsid") if os.name == "posix" else None
+        if setsid:
+            self._processGroupId = None
+            process.started.connect(self._rememberProcessGroup)
+            process.start(setsid, ["--", pythonExecutable] + arguments)
+        else:
+            self._processGroupId = None
+            process.start(pythonExecutable, arguments)
+
+    def _rememberProcessGroup(self):
+        if self.process and self.process.state() != qt.QProcess.NotRunning:
+            try:
+                self._processGroupId = int(self.process.processId())
+            except (TypeError, ValueError):
+                self._processGroupId = None
+
+    def _signalProcessGroup(self, sig):
+        if self._processGroupId is None:
+            return False
+        try:
+            os.killpg(self._processGroupId, sig)
+            return True
+        except ProcessLookupError:
+            return True
+        except OSError:
+            return False
+
     def startRemote(self, pythonExecutable, workerPath, context, serverUrl, bearerToken,
-                    inputPreprocessed=False):
+                    inputPreprocessed=False, certificate=""):
         """Run the HTTP bridge asynchronously, keeping network I/O off Slicer's UI thread."""
         if self.isRunning:
             raise RuntimeError("An inference process is already running")
@@ -96,6 +127,8 @@ class InferenceProcessManager(qt.QObject):
                      "--output", context["outputPath"], "--model", context["modelKey"],
                      "--module", context["moduleName"], "--device", context["device"],
                      "--show-previews", "1" if context["showAllFiles"] else "0"]
+        if certificate:
+            arguments += ["--certificate", certificate]
         if inputPreprocessed:
             arguments += ["--input-preprocessed"]
         if context["maskPath"]:
@@ -171,6 +204,8 @@ class InferenceProcessManager(qt.QObject):
         stdout = "".join(self._stdoutLog)
         stderr = "".join(self._stderrLog)
         wasCancelled = self._cancelRequested
+        self._signalProcessGroup(getattr(signal, "SIGKILL", signal.SIGTERM))
+        self._processGroupId = None
         process.deleteLater()
         self.process = None
         if self._killTimer:
@@ -190,14 +225,17 @@ class InferenceProcessManager(qt.QObject):
         if not self.isRunning or self._cancelRequested:
             return
         self._cancelRequested = True
-        self.process.terminate()
+        if not self._signalProcessGroup(signal.SIGTERM):
+            self.process.terminate()
         self._killTimer = qt.QTimer(self)
         self._killTimer.setSingleShot(True)
         self._killTimer.timeout.connect(self._killIfRunning)
         self._killTimer.start(3000)
 
     def _killIfRunning(self):
-        if self.isRunning:
+        if self._processGroupId is not None:
+            self._signalProcessGroup(getattr(signal, "SIGKILL", signal.SIGTERM))
+        elif self.isRunning:
             self.process.kill()
 
     def cleanup(self, removeWorkDir=True):
@@ -207,7 +245,8 @@ class InferenceProcessManager(qt.QObject):
             self._killTimer = None
         if self.isRunning:
             self._cancelRequested = True
-            self.process.kill()
+            if not self._signalProcessGroup(getattr(signal, "SIGKILL", signal.SIGTERM)):
+                self.process.kill()
         elif self.process:
             self.process.deleteLater()
             self.process = None
