@@ -91,6 +91,10 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.remoteResources = None
         self.remoteSites = self._loadRemoteSiteProfiles()
         self.activeRemoteSite = None
+        
+        self.POLLING_UPLOADING_TIMER_SHORT = 1000  # milliseconds
+        self.POLLING_UPLOADING_TIMER_LONG = 5000  # milliseconds
+        
 
     def checkDependencies(self):
         from importlib.util import find_spec
@@ -106,10 +110,12 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
 
         self.ui.installRequirementsButton.setVisible(not allPresent)
         self.ui.infoLabel.setVisible(not allPresent)
+       
         if onnxRuntimeError:
             self.ui.infoLabel.setText(
                 "ONNX Runtime cannot be loaded ({}). Use Install dependencies to repair the CPU runtime."
                 .format(onnxRuntimeError))
+        
         self.ui.applyButton.setVisible(allPresent)
         self.ui.sampleDataButton.setVisible(allPresent)
         self.dependenciesInstalled = allPresent 
@@ -196,7 +202,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         selected_data = self.ui.deviceList.itemData(index)
         if selected_data:
             self.selectedDeviceKey = selected_data.get("key")
-            if hasattr(self, "resourceBars"):
+            if hasattr(self, "resourceUsageWidget"):
                 self.updateResourceUsage()
 
     def onModelSelected(self, index):
@@ -279,8 +285,8 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.layout.addWidget(self.progressBar)
 
         advancedLayout = self.ui.advancedCollapsibleButton.layout()
-        from qt import QLabel
         from ModalityConverterLib.UI.RemoteConnectionWidget import RemoteConnectionWidget
+        from ModalityConverterLib.UI.ResourceUsageWidget import ResourceUsageWidget
         self.remoteUI = RemoteConnectionWidget(self.ui.advancedCollapsibleButton)
         self.remoteSiteSelector = self.remoteUI.siteSelector
         self.remoteManageButton = self.remoteUI.manageButton
@@ -299,23 +305,8 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.remoteConnectButton.clicked.connect(self.onRemoteConnectClicked)
         self.remoteManageButton.clicked.connect(self.onManageRemoteSites)
         self.remoteSiteSelector.currentIndexChanged.connect(self.onRemoteSiteSelected)
-        self.resourceBars = {}
-        self.resourceLabels = {}
-        self.currentResourcesLabel = QLabel("Current resources")
-        self.currentResourcesLabel.setStyleSheet("font-weight: 600; margin-top: 4px;")
-        advancedLayout.addRow(self.currentResourcesLabel)
-        for key, title in (("cpu", "CPU"), ("ram", "RAM"), ("gpu", "GPU")):
-            label = QLabel("{} used: N/D".format(title))
-            label.setStyleSheet("font-size: 10px;")
-            bar = QProgressBar(self.ui.advancedCollapsibleButton)
-            bar.setRange(0, 100)
-            bar.setValue(0)
-            bar.setTextVisible(False)
-            bar.setFixedHeight(9)
-            advancedLayout.addRow(label)
-            advancedLayout.addRow(bar)
-            self.resourceBars[key] = bar
-            self.resourceLabels[key] = label
+        self.resourceUsageWidget = ResourceUsageWidget(
+            self.ui.advancedCollapsibleButton, advancedLayout)
         self._resourceTimer = QTimer(uiWidget)
         self._resourceTimer.timeout.connect(self.updateResourceUsage)
         self._resourceTimer.start(5000)
@@ -362,15 +353,6 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
 
     def enter(self) -> None:
         """Called each time the user opens this module."""
-        # Collapse developer controls while keeping their headers available.
-        try:
-            self.reloadCollapsibleButton.collapsed = True
-        except Exception:
-            try:
-                representation = slicer.modules.modalityconverter.widgetRepresentation()
-                representation.self().reloadCollapsibleButton.collapsed = True
-            except Exception:
-                logging.debug("Could not collapse Reload & Test panel", exc_info=True)
         try:
             dataProbe = slicer.util.findChild(slicer.util.mainWindow(), "DataProbeCollapsibleWidget")
             if dataProbe:
@@ -427,9 +409,6 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         Set and observe parameter node.
         Observation is needed because when the parameter node is changed then the GUI must be updated immediately.
         """
-        """if self._parameterNode:
-            self._parameterNode.disconnectGui(self._parameterNodeGuiTag)
-            self.removeObserver(self._parameterNode, vtk.vtkCommand.ModifiedEvent, self._checkCanApply)"""
         self._parameterNode = inputParameterNode
         if self._parameterNode:
             # Note: in the .ui file, a Qt dynamic property called "SlicerParameterName" is set on each
@@ -773,13 +752,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self._setResourceBar("gpu", None, "GPU used: N/D")
 
     def _setResourceBar(self, key, value, labelText=None):
-        bar = self.resourceBars[key]
-        available = value is not None
-        bar.setEnabled(available)
-        bar.setValue(max(0, min(100, int(value or 0))))
-        if labelText is None:
-            labelText = "CPU used: {:.0f}%".format(value) if available else "CPU used: N/D"
-        self.resourceLabels[key].setText(labelText)
+        self.resourceUsageWidget.setResource(key, value, labelText)
 
     def setRunGuiBusy(self, busy):
         self._runGuiBusy = bool(busy)
@@ -955,9 +928,11 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     def onInferenceProgress(self, percent, message):
         if not self.currentRunToken:
             return
+        
         if self._resourceTimer and self.remoteServerUrl:
             uploadingVolume = "uploading volume" in (message or "").lower()
-            self._resourceTimer.setInterval(10000 if uploadingVolume else 5000)
+            self._resourceTimer.setInterval(self.POLLING_UPLOADING_TIMER_SHORT if uploadingVolume else self.POLLING_UPLOADING_TIMER_LONG)
+            
         self.progressBar.setValue(percent)
         self.updateInfoLabel(message or "Inference running ({:d}%)".format(percent))
 
@@ -1004,6 +979,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     def onInferenceFailed(self, token, message):
         if token != self.currentRunToken:
             return
+        
         slicer.util.errorDisplay("Inference failed:\n{}".format(message))
         logging.error("Inference worker failed: %s", message)
         self.updateInfoLabel("Inference failed.")
@@ -1012,12 +988,14 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
     def onInferenceCancelled(self, token):
         if token != self.currentRunToken:
             return
+        
         self.updateInfoLabel("Inference cancelled.")
         self._finishRun(token)
 
     def _finishRun(self, token, preservePreviews=False):
         if token != self.currentRunToken:
             return
+        
         self._restoreRunGui()
         self.currentRunToken = None
         self.runContext = None
@@ -1033,14 +1011,18 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.ui.applyButton.setStyleSheet("background-color: rgb(52, 206, 165);")
         self.ui.applyButton.setToolTip("Run the algorithm.")
         self.setMainButtonsState(True)
+        
         if hasattr(self, "progressBar"):
             self.progressBar.setVisible(False)
+            
         for name in ("inputSelector", "outputSelector", "maskSelector", "modelSelector", "deviceList"):
             widget = getattr(getattr(self, "ui", None), name, None)
             if widget:
                 widget.enabled = True
+                
         if hasattr(self, "remoteConnectButton"):
             self.remoteConnectButton.setEnabled(True)
+            
         if hasattr(self, "ui"):
             self._checkCanApply()
 
@@ -1096,6 +1078,7 @@ class ModalityConverterLogic(ScriptedLoadableModuleLogic):
         """Return Slicer's bundled standalone Python interpreter when available."""
         suffix = ".exe" if sys.platform.startswith("win") else ""
         candidates = []
+        
         try:
             binaryDir = slicer.app.applicationDirPath
             if callable(binaryDir):
@@ -1103,6 +1086,7 @@ class ModalityConverterLogic(ScriptedLoadableModuleLogic):
             candidates.append(os.path.join(str(binaryDir), "PythonSlicer" + suffix))
         except Exception:
             pass
+        
         try:
             slicerHome = slicer.app.slicerHome
             if callable(slicerHome):
@@ -1110,6 +1094,7 @@ class ModalityConverterLogic(ScriptedLoadableModuleLogic):
             candidates.append(os.path.join(str(slicerHome), "bin", "PythonSlicer" + suffix))
         except Exception:
             pass
+        
         if os.path.basename(sys.executable).lower().startswith("pythonslicer"):
             candidates.append(sys.executable)
         for candidate in candidates:
@@ -1122,33 +1107,45 @@ class ModalityConverterLogic(ScriptedLoadableModuleLogic):
         import json
         import tempfile
         import numpy as np
+        
         if not inputVolume or not outputVolume:
             raise ValueError("Select valid input and output scalar volumes")
+        
         if not selectedModelKey or not selectedModelModuleName:
             raise ValueError("Select a valid inference model")
+        
         if device not in ("cpu", "coreml") and not (device or "").startswith("cuda:"):
             raise ValueError("Select a supported inference device")
+        
         if not inputVolume.GetImageData() or inputVolume.GetImageData().GetNumberOfPoints() == 0:
             raise ValueError("Input volume is empty")
+        
         if not os.path.isfile(os.path.join(os.path.dirname(__file__), "ModalityConverterLib", "inference_worker.py")):
             raise FileNotFoundError("Inference worker script is missing")
+        
         modelsDir = os.path.join(os.path.dirname(__file__), "Resources", "Models")
         with open(os.path.join(modelsDir, "metadata.json"), "r") as metadataFile:
             metadata = json.load(metadataFile)
+            
         if selectedModelKey not in metadata or metadata[selectedModelKey].get("module_name") != selectedModelModuleName:
             raise ValueError("Selected model does not match the installed model metadata")
+        
         if metadata[selectedModelKey].get("mask_required") and not maskVolume:
             raise ValueError("This model requires an ROI mask")
+        
         if maskVolume:
             maskArray = slicer.util.arrayFromVolume(maskVolume)
             if maskArray.shape != slicer.util.arrayFromVolume(inputVolume).shape:
                 raise ValueError("Input and mask volumes must have matching dimensions")
+            
         workDir = tempfile.mkdtemp(prefix="modality-converter-")
         inputPath = os.path.join(workDir, "input.npy")
         outputPath = os.path.join(workDir, "output.npy")
+        
         # NPY preserves the source scalar dtype and values without a compression pass.
         np.save(inputPath, np.asarray(slicer.util.arrayFromVolume(inputVolume)), allow_pickle=False)
         maskPath = None
+        
         if maskVolume:
             maskPath = os.path.join(workDir, "mask.npy")
             np.save(maskPath, np.asarray(slicer.util.arrayFromVolume(maskVolume)), allow_pickle=False)

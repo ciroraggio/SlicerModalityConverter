@@ -14,8 +14,8 @@ class RemoteSitesDialog(qt.QDialog):
         self._iconDir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "Resources", "Icons"))
 
         layout = qt.QVBoxLayout(self)
-        layout.addWidget(qt.QLabel("Add one or more remote sites. Select a site and connect from the Remote Connection widget."))
-        self._addButton = qt.QPushButton("Add site")
+        layout.addWidget(qt.QLabel("Add one or more remote sites. Select a site and connect from the \"Remote connections\" widget."))
+        self._addButton = qt.QPushButton("+ Add new site")
         self._addButton.setStyleSheet("background-color: rgb(153, 203, 252);")
         layout.addWidget(self._addButton)
         self._addButton.clicked.connect(lambda checked=False: self._addRow())
@@ -24,7 +24,7 @@ class RemoteSitesDialog(qt.QDialog):
         buttons.addStretch(1)
         self._cancelButton = qt.QPushButton("Cancel")
         self._cancelButton.setStyleSheet("background-color: rgba(210, 55, 55, 185);")
-        self._saveButton = qt.QPushButton("Save sites")
+        self._saveButton = qt.QPushButton("Save")
         self._saveButton.setStyleSheet("background-color: rgb(52, 206, 165);")
         buttons.addWidget(self._cancelButton)
         buttons.addWidget(self._saveButton)
@@ -50,7 +50,7 @@ class RemoteSitesDialog(qt.QDialog):
         portEdit.setFixedWidth(55)
         portEdit.setText("8765")
         tokenEdit.setPlaceholderText("Bearer token")
-        tokenEdit.setFixedWidth(120)
+        tokenEdit.setFixedWidth(150)
         tokenEdit.setEchoMode(qt.QLineEdit.Password)
         if site:
             nameEdit.setText(site.get("name", ""))
@@ -70,7 +70,12 @@ class RemoteSitesDialog(qt.QDialog):
         rowLayout.addWidget(removeButton)
         item = {"widget": row, "name": nameEdit, "host": hostEdit, "port": portEdit, "token": tokenEdit}
         self._rows.append(item)
-        removeButton.clicked.connect(lambda checked=False, item=item: self._removeRow(item))
+        
+        # Defer removal until the clicked signal has finished. Removing the
+        # sender's parent row while Qt is dispatching the button signal can
+        # tear down the dialog (and, in Slicer, the host app).
+        removeButton.clicked.connect(lambda checked=False, item=item: qt.QTimer.singleShot(0, lambda item=item: self._removeRow(item)))
+        
         self.layout().insertWidget(self.layout().indexOf(self._addButton), row)
         self.adjustSize()
 
@@ -78,7 +83,6 @@ class RemoteSitesDialog(qt.QDialog):
         if item in self._rows:
             self._rows.remove(item)
             self.layout().removeWidget(item["widget"])
-            item["widget"].setParent(None)
             item["widget"].deleteLater()
             self.adjustSize()
 

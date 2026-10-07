@@ -19,6 +19,7 @@ set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}Lib/UI/HelpDialog.py
   ${MODULE_NAME}Lib/UI/RemoteSitesDialog.py
   ${MODULE_NAME}Lib/UI/RemoteConnectionWidget.py
+  ${MODULE_NAME}Lib/UI/ResourceUsageWidget.py
   ${MODULE_NAME}Lib/UI/utils.py
   ${MODULE_NAME}Lib/Utils/customTransformsUtils.py
   ${MODULE_NAME}Lib/Utils/modelLoadUtils.py

@@ -26,6 +26,9 @@
   - [ModalityConverter](#modalityconverter)
     - [Key Features](#key-features)
     - [How to Use](#how-to-use)
+    - [Remote inference](#remote-inference)
+      - [Server side](#server-side)
+      - [Client side](#client-side)
     - [Available Models](#available-models)
     - [Example (with video)](#example-with-video)
     - [How to Integrate a Custom Model](#how-to-integrate-a-custom-model)
@@ -65,6 +68,7 @@ Here is a short [video tutorial](https://youtu.be/QsxzjQb05D4?feature=shared) sh
 
 - Support for multiple pre-trained deep learning models
 - GPU acceleration support for faster processing
+- Local or remote inference, with saved remote site profiles
 - Easy custom models integration for advanced users
 
 ### How to Use
@@ -74,7 +78,48 @@ Here is a short [video tutorial](https://youtu.be/QsxzjQb05D4?feature=shared) sh
 - Optionally provide a binary mask to focus the translation on specific regions
 - Click "Run" to generate the synthetic image
 
-This extension is intended for **research purposes only**. If a model is applied to an input image of the wrong type (i.e. using a CT or CBCT instead of an MRI for an MRI-to-sCT model), the output will be wrong or unpredictable.
+### Remote inference
+
+Remote inference runs models on a remote server while you use the Slicer interface locally.
+
+#### Server side
+
+On the remote server, clone the repository:
+
+```sh
+git clone https://github.com/ciroraggio/SlicerModalityConverter.git
+```
+
+install the dependencies:
+
+```sh
+./install_remote_server.sh
+```
+
+and run the server code:
+
+```sh
+BIND_HOST=0.0.0.0 ./start_remote_server.sh
+```
+The default bind address is `127.0.0.1`. Use `BIND_HOST=0.0.0.0` only when access from another computer is needed, and restrict access with a firewall or VPN. HTTP does not encrypt bearer tokens or medical volumes. Use a trusted network and matching client/server repository versions.
+
+#### Client side
+
+Open the ModalityConverter extension and set your remote site/s using the dedicated section in **Advanced -> Manage sites**:
+
+1. click on the settings icon
+2. add the server name, address, port, and bearer token (tokens are session-only).
+3. save the changes
+4. select the site from the list and click **Connect**. 
+ 
+Sites are stored in `ModalityConverter/Resources/RemoteSites/sites.json`.
+
+The remote resources (CPU and GPUs) will be available in the **Device** list.
+
+The resource indicators show server usage. Tokens are kept for the current Slicer session.
+
+For models that rely on other Slicer modules for processing, the Slicer part will be run locally before the preprocessed volumes are sent.
+
 
 ### Available Models
 
