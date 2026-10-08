@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -5,6 +6,7 @@ import uuid
 from typing import Optional
 
 import vtk
+import qt
 import slicer
 from slicer.i18n import tr as _
 from slicer.i18n import translate
@@ -85,6 +87,9 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.brainCancellationRequested = False
         self._runGuiBusy = False
         self._resourceTimer = None
+        self._resourceNetworkManager = None
+        self._resourceReply = None
+        self._resourceRequestContext = None
         self._cpuSample = None
         self.remoteServerUrl = None
         self.remoteToken = None
@@ -92,7 +97,7 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.remoteSites = self._loadRemoteSiteProfiles()
         self.activeRemoteSite = None
         
-        self.POLLING_UPLOADING_TIMER_SHORT = 1000  # milliseconds
+        self.POLLING_UPLOADING_TIMER_SHORT = 2000  # milliseconds
         self.POLLING_UPLOADING_TIMER_LONG = 5000  # milliseconds
         
 
@@ -307,6 +312,8 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         self.remoteSiteSelector.currentIndexChanged.connect(self.onRemoteSiteSelected)
         self.resourceUsageWidget = ResourceUsageWidget(
             self.ui.advancedCollapsibleButton, advancedLayout)
+        self._resourceNetworkManager = qt.QNetworkAccessManager(uiWidget)
+        self._resourceNetworkManager.finished.connect(self._onRemoteResourceUsageFinished)
         self._resourceTimer = QTimer(uiWidget)
         self._resourceTimer.timeout.connect(self.updateResourceUsage)
         self._resourceTimer.start(self.POLLING_UPLOADING_TIMER_SHORT)
@@ -359,6 +366,8 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self.inferenceProcessManager.cleanup()
         if self._resourceTimer:
             self._resourceTimer.stop()
+        if self._resourceReply:
+            self._resourceReply.abort()
         self._cleanupBrainPreprocessing()
         self.removeObservers()
 
@@ -680,22 +689,63 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             self.remoteServerUrl, self.remoteToken, inputPreprocessed=inputPreprocessed,
             certificate=(self.activeRemoteSite.get("certificate", "") if self.activeRemoteSite else ""))
 
-    def updateResourceUsage(self):
-        if self.remoteServerUrl and self.remoteToken:
-            try:
-                import requests
-                response = requests.get(self.remoteServerUrl + "/api/v1/resources",
-                    headers={"Authorization": "Bearer " + self.remoteToken}, timeout=10,
-                    verify=(self.activeRemoteSite.get("certificate") or True) if self.activeRemoteSite else True)
-                response.raise_for_status()
-                self.remoteResources = response.json()
-            except Exception as exc:
-                self._disconnectRemoteSite(str(exc))
+    def updateResourceUsage(self, requestRemote=True):
+        if self.remoteServerUrl and self.remoteToken and requestRemote:
+            if self._resourceReply:
                 return
-            else:
-                if self.activeRemoteSite:
-                    self.remoteStatusLabel.setText("● Online · {}".format(self.activeRemoteSite["name"]))
-                    self.remoteStatusLabel.setStyleSheet("color: #16803c; font-weight: 600;")
+            serverUrl, token = self.remoteServerUrl, self.remoteToken
+            certificate = (self.activeRemoteSite.get("certificate") or True) if self.activeRemoteSite else True
+            request = qt.QNetworkRequest(qt.QUrl(serverUrl + "/api/v1/resources"))
+            request.setRawHeader(qt.QByteArray("Authorization"), qt.QByteArray("Bearer " + token))
+
+            if certificate is not True:
+                certificates = qt.QSslCertificate.fromPath(certificate)
+                if not certificates:
+                    self._disconnectRemoteSite("Could not read the selected HTTPS certificate")
+                    return
+                sslConfiguration = qt.QSslConfiguration.defaultConfiguration()
+                sslConfiguration.setCaCertificates(certificates)
+                request.setSslConfiguration(sslConfiguration)
+
+            self._resourceRequestContext = (serverUrl, token)
+            self._resourceReply = self._resourceNetworkManager.get(request)
+            return
+
+        self._renderResourceUsage()
+
+    def _onRemoteResourceUsageFinished(self, reply):
+        if reply != self._resourceReply:
+            reply.deleteLater()
+            return
+
+        serverUrl, token = self._resourceRequestContext or (None, None)
+        self._resourceReply = None
+        self._resourceRequestContext = None
+        try:
+            if reply.error() != 0:
+                raise RuntimeError(reply.errorString())
+            payload = reply.readAll().data()
+            if isinstance(payload, bytes):
+                payload = payload.decode("utf-8")
+            resources = json.loads(payload if isinstance(payload, str) else str(payload))
+        except Exception as exc:
+            reply.deleteLater()
+            if serverUrl == self.remoteServerUrl and token == self.remoteToken:
+                self._disconnectRemoteSite(str(exc))
+            return
+
+        reply.deleteLater()
+
+        if serverUrl != self.remoteServerUrl or token != self.remoteToken:
+            return
+        self.remoteResources = resources
+
+        if self.activeRemoteSite:
+            self.remoteStatusLabel.setText("● Online · {}".format(self.activeRemoteSite["name"]))
+            self.remoteStatusLabel.setStyleSheet("color: #16803c; font-weight: 600;")
+        self.updateResourceUsage(requestRemote=False)
+
+    def _renderResourceUsage(self):
         if self.remoteServerUrl:
             data = self.remoteResources or {}
             activeJobs = data.get("active_jobs", 0)
@@ -703,20 +753,29 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
             cpuLabel = ("Remote inference CPU: {:.0f}% ({} job{})".format(
                 cpu, activeJobs, "s" if activeJobs != 1 else "") if activeJobs else
                 "Remote server CPU used: {:.0f}%".format(cpu) if cpu is not None else "Remote CPU used: N/D")
+
             self._setResourceBar("cpu", cpu, cpuLabel)
             total = data.get("ram_total")
-            used = data.get("worker_ram_used") if activeJobs else data.get("ram_used")
-            ramLabel = ("Remote inference RAM: {:.1f} GB".format(used / 1024**3) if activeJobs else
-                "Remote RAM used: {:.1f} / {:.1f} GB".format(used / 1024**3, total / 1024**3)
-                if total else "Remote RAM used: N/D")
+            used = data.get("ram_used")
+            if used is not None and total:
+                ramLabel = "Remote RAM used: {:.1f} / {:.1f} GB".format(
+                    used / 1024**3, total / 1024**3)
+            else:
+                ramLabel = "Remote RAM used: N/D"
+
             self._setResourceBar("ram", 100.0 * used / total if total and used is not None else None, ramLabel)
             gpu = next((g for g in data.get("gpus", [])
                         if "cuda:{}".format(g.get("cuda_index", g["index"])) == (self.selectedDeviceKey or "")), None)
-            self._setResourceBar("gpu", gpu.get("utilization") if gpu else None,
+
+            gpuMemoryPercent = (100.0 * gpu["memory_used_mb"] / gpu["memory_total_mb"]
+                                if gpu and gpu.get("memory_total_mb") else None)
+
+            self._setResourceBar("gpu", gpuMemoryPercent,
                 "Remote GPU {} ({}): {:.1f} / {:.1f} GB".format(
                     gpu["index"], gpu["name"], gpu["memory_used_mb"] / 1024,
                     gpu["memory_total_mb"] / 1024) if gpu else "Remote GPU used: N/D")
             return
+
         cpu = None
         ramUsed = None
         ramTotal = None
@@ -777,8 +836,9 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
                         gpu, gpuUsed, gpuTotal = values
             except Exception:
                 pass
-        if gpu is not None and gpuTotal:
-            self._setResourceBar("gpu", gpu,
+        if gpuUsed is not None and gpuTotal:
+            gpuMemoryPercent = 100.0 * gpuUsed / gpuTotal
+            self._setResourceBar("gpu", gpuMemoryPercent,
                                  "GPU used: {:.1f} GB / {:.1f} GB".format(
                                      gpuUsed / 1024.0, gpuTotal / 1024.0))
         else:
@@ -963,10 +1023,6 @@ class ModalityConverterWidget(ScriptedLoadableModuleWidget, VTKObservationMixin)
         if not self.currentRunToken:
             return
         
-        if self._resourceTimer and self.remoteServerUrl:
-            uploadingVolume = "uploading volume" in (message or "").lower()
-            self._resourceTimer.setInterval(self.POLLING_UPLOADING_TIMER_SHORT if uploadingVolume else self.POLLING_UPLOADING_TIMER_LONG)
-            
         self.progressBar.setValue(percent)
         self.updateInfoLabel(message or "Inference running ({:d}%)".format(percent))
 
