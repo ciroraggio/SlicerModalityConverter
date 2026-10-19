@@ -13,7 +13,7 @@
 
 ![Image_Synthesis](https://img.shields.io/badge/Medical-Image_Synthesis-ed7d3a?style=for-the-badge)
 ![MedicalAI](https://img.shields.io/badge/Medical-Artificial_Intelligence-8cd867?style=for-the-badge)
-![MedicalI2I](https://img.shields.io/badge/Medical-Image_To_Image_Tranlastion-2fbf71?style=for-the-badge)
+![MedicalI2I](https://img.shields.io/badge/Medical-Image_To_Image_Translation-2fbf71?style=for-the-badge)
 
 </div>
 
